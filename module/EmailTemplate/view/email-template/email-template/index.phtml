@@ -1,0 +1,71 @@
+ <?php
+ $title = 'Email Template Configuration';
+ $this->headTitle($title);
+ ?>
+ <div class="row">
+    <div class="col-md-12">
+        <h3><?php echo $this->escapeHtml($title); ?></h3>
+        <?php
+        if($this->flashMessenger()->render('error')!='') 
+        {
+            echo '<div class="alert alert-error">'.$this->flashMessenger()->render('error').'</div>';
+        }
+        if($this->flashMessenger()->render('success')!='') 
+        {
+            echo '<div class="alert alert-success">'.$this->flashMessenger()->render('success').'</div>';
+        }
+        if($this->flashMessenger()->render('info')!='') 
+        {
+            echo '<div class="alert alert-info">'.$this->flashMessenger()->render('info').'</div>';
+        }
+        ?>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <?php echo $this->translate('Results: ') ?><?php echo $this->escapeHtml(count($result));?>
+                <div style="float:right;font-size:12px;">                    
+                    <a href="<?php echo $this->url('email-template', array('action'=>'add'));?>">Add New</a>                   
+                </div>                       
+            </div>
+            <table class="table <?php if(count($result)>0): echo 'pagination-table'; endif;?>">
+              <thead>
+                 <tr class="panel panel-default">                
+                    <th class="panel-heading" style="width:100px !important;">Template Name</th>  
+                    <th class="panel-heading" style="width:120px !important;">From Name</th> 
+                    <th class="panel-heading" style="width:220px !important;">From Email</th> 
+                    <th class="panel-heading" style="width:40px !important;">Subject</th>
+                    <th class="panel-heading" style="width:40px !important;">Status</th>
+                    <th class="panel-heading align-center" id="data-sorter-false">Action</th>
+                 </tr>
+                 </thead>
+                 <tbody>	
+                 <?php
+                 if(count($result)>0) { foreach ($result as $res) : ?>
+                    <tr class="panel panel-default">      
+                        <td><?php echo $this->escapeHtml($res->name);?></td>
+                        <td><?php echo $this->escapeHtml($res->from_name);?></td>
+                        <td><?php echo $this->escapeHtml($res->from_email);?></td>
+                        <td><?php echo $this->escapeHtml($res->subject);?></td>  
+                        <td>
+                            <?php if($res->status==0){
+                                echo 'In-Active';
+                            } else {
+                                echo 'Active';
+                            }
+                            ?>
+                        </td>
+                        <td id="data-sorter-false">
+                            <a href="<?php echo $this->url('email-template',array('action'=>'view', 'pkey' => $res->pkey));?>" title="View"><img src="<?php echo $this->basePath().'/img/icon_view.png'?>"></a>&nbsp;
+                            <a href="<?php echo $this->url('email-template',array('action'=>'edit', 'pkey' => $res->pkey));?>" title="Edit"><img src="<?php echo $this->basePath().'/img/icon_edit.png'?>"></a>&nbsp;
+                            <a href="<?php echo $this->url('email-template',array('action'=>'delete', 'pkey' => $res->pkey));?>" title="Delete"><img src="<?php echo $this->basePath().'/img/icon_delete.png'?>"></a>
+                        </td>
+                    </tr>
+                 <?php endforeach; } else { ?>
+                 <tr class="panel panel-default">
+                    <td colspan="4" class="align-center"><?php echo $this->escapeHtml('No Email Template Added yet..');?></td>    
+                 </tr>
+                 <?php } ?>
+                 </tbody>
+             </table>	
+        </div>
+    </div> 
+ </div>

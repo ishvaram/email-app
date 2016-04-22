@@ -1,0 +1,28 @@
+<?php
+ $title = 'Change Password for '.$this->escapeHtml($this->email);
+ $this->headTitle($title);
+ ?>
+<h3><?php echo $this->escapeHtml($title); ?></h3>
+<?php
+
+$form = $this->resetForm;
+
+$form->prepare();
+$form->setAttribute('action', $this->url('zfcuser/resetpassword', array('userId' => $this->userId, 'token' => $this->token)));
+$form->setAttribute('method', 'post');
+
+echo $this->form()->openTag($form);
+
+?>
+<dl id="login" class="zend_form" style="width:26%">
+<dt><?php echo $this->formLabel($form->get('newCredential')); ?></dt>
+<dd><?php echo $this->formInput($form->get('newCredential')) . $this->formElementErrors($form->get('newCredential')); ?></dd>
+
+<dt><?php echo $this->formLabel($form->get('newCredentialVerify')); ?></dt>
+<dd><?php echo $this->formInput($form->get('newCredentialVerify')) . $this->formElementErrors($form->get('newCredentialVerify')); ?></dd>
+
+<br/><dd><?php echo $this->formButton($form->get('submit')); ?></dd>
+
+</dl>
+
+<?php echo $this->form()->closeTag(); ?>

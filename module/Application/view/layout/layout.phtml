@@ -1,0 +1,142 @@
+<?php echo $this->doctype(); ?>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <?php echo $this->headTitle('EMAIL APPLICATION ') ?>
+
+        <?php echo $this->headMeta()
+            ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+            ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+        ?>
+
+        <!-- Le styles -->
+        <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
+                    
+                    ->prependStylesheet($this->basePath() . '/css/dataTables.css')       
+                    ->prependStylesheet($this->basePath() . '/css/style.css')                                         
+                    ->prependStylesheet($this->basePath() . '/css/jquery.fileupload.css')
+                    ->prependStylesheet($this->basePath() . '/css/bootstrap-theme.css')
+                    ->prependStylesheet($this->basePath() . '/css/bootstrap.css') 
+                    ->prependStylesheet($this->basePath() . '/css/jquery.multiselect.css')
+                    ->prependStylesheet($this->basePath() . '/css/jquery.multiselect.filter.css')
+                    ->prependStylesheet($this->basePath() . '/css/jquery-ui.css')
+                        
+        ?>
+
+        <!-- Scripts -->
+        <?php echo $this->headScript()     
+               
+            ->prependFile($this->basePath() . '/js/popup.js')     
+            ->prependFile($this->basePath() . '/includes/wyzz/wyzz.js') 
+            ->prependFile($this->basePath() . '/js/custom.tables.js')
+            ->prependFile($this->basePath() . '/js/jquery.dataTables.js')    
+            ->prependFile($this->basePath() . '/js/bootstrap.min.js')
+            ->prependFile($this->basePath() . '/js/jquery.min.js')
+            ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
+            ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',))        
+        ; ?>
+        <script type="text/javascript" src="<?php echo $this->basePath();?>/js/jquery-ui.js"></script>
+        <script type="text/javascript" src="<?php echo $this->basePath();?>/js/jquery.multiselect.js"></script>
+        <script type="text/javascript" src="<?php echo $this->basePath();?>/js/jquery.multiselect.filter.js"></script>
+        <script type="text/javascript" src="<?php echo $this->basePath()?>/js/jquery.iframe-transport.js"></script>
+        <script type="text/javascript" src="<?php echo $this->basePath()?>/js/jquery.fileupload.js"></script>                           
+    </head>
+    <?php
+    header("Cache-Control: private, must-revalidate, max-age=0");
+    header("Pragma: no-cache");
+    header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // A date in the past
+    ?>
+    <body>
+        <?php 
+	$url="http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+	$param = parse_url($url);
+        $paramArr = explode('/',$param['path']);
+	if(isset($paramArr[1]))
+            $controllerName = $paramArr[1];
+	if(isset($paramArr[2]))
+            $actionName = $paramArr[2];
+        if(isset($paramArr[3])) {
+            $statusName = $paramArr[3];
+        }
+	?>
+        <script>
+            $(function () {
+                //initializing the accordion                 
+                var active_accordin = 0;
+                <?php if($controllerName=='country' || $controllerName=='statelist' || $controllerName=='curriculumtype' || $controllerName=='curriculumclass' || $controllerName=='employeeclass' || $controllerName=='jobspecifictrainingfunction' || $controllerName=='jobspecifictrainingrole'):  ?>    
+                 active_accordin = 1;   
+                <?php endif; ?>  
+                    <?php if($controllerName=='emailapp' || $controllerName=='jobdescription' || $controllerName=='employee' || $controllerName=='jobspecifictraining'):  ?>    
+                 active_accordin = 0;   
+                <?php endif; ?>  
+                
+                $("#navigationMenu").accordion({                   
+                   heightStyle: "content",
+                   active: active_accordin,
+                });
+            });
+        </script> 
+        <?php if ($this->zfcUserDisplayName()) : ?>
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="<?php echo $this->url('home') ?>"><img height="22" src="<?php echo $this->basePath('img/veeva-logo.png') ?>" alt="Veeva"/>&nbsp;</a>
+                </div>                
+                <div class="collapse navbar-collapse">
+                    
+                    <ul style="float:right;" class="nav navbar-nav">
+                        <li<?php if($controllerName == 'user') {echo ' class="active"';}?>><a href="#"><?php echo $this->translate('Hello'); ?>, <?php echo ucwords($this->zfcUserDisplayName()) ?>!</a></li>
+                        <li <?php if($controllerName == 'user' && $actionName=='change-password') echo ' class="active"';?>><a href="<?php echo $this->url('zfcuser/changepassword') ?>"><?php echo $this->translate('Settings'); ?></a></li>
+                        <li><a href="<?php echo $this->url('zfcuser/logout') ?>"><?php echo $this->translate('Log Out'); ?></a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->                
+            </div>
+        </nav>        
+        <div id="wrapper">
+            <div id="left-nav">
+                <nav id="navigationMenu"> 
+                    
+                    <h3> <a href="#"> Branded List </a> </h3>
+                    <div> 
+                        <ul> 
+                            <li <?php if($controllerName == 'emailapp') echo ' class="active"';?>> <a href="<?php echo $this->url('emailapp') ?>"> Email List</a> </li> 
+                            <li <?php if($controllerName == 'email-template') echo ' class="active"';?>> <a href="<?php echo $this->url('email-template') ?>"> Email Template</a> </li> 
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            <div id="container">  
+                <?php 
+                $length = strlen($this->navigation('Navigation')->breadcrumbs());
+                ?>
+                
+                <div class="container-cnt">
+                    <?php echo $this->content; ?>
+                </div>
+            </div>
+        </div>
+        <?php else: ?>
+        <nav class="navbar navbar-home navbar-fixed-top" role="navigation">
+            <div class="container">
+                <h2>Email Application</h2>    
+            </div>
+        </nav>
+        <div class="container">
+            <?php echo $this->content; ?>
+        </div>
+        <?php endif; ?>
+        <div class="container">            
+            <hr>
+            <footer>
+                <p>&copy; <?php echo date('Y') ?> <?php echo $this->translate('All rights reserved.') ?></p>
+            </footer>
+        </div> <!-- /container -->
+        <?php echo $this->inlineScript() ?>
+    </body>
+</html>

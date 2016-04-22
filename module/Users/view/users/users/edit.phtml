@@ -1,0 +1,30 @@
+<?php
+$title = 'Edit internal user';
+$this->headTitle($title);
+?>
+
+<?php if ($this->status === true) : ?>
+<div class="alert alert-success"><?php echo $this->translate('User created.');?></div>
+<?php elseif ($this->status === false) : ?>
+<div class="alert alert-error"><?php echo $this->translate('Email / Username alredy exists. Please try again.'); ?></div>
+<?php endif; ?>
+
+
+<?php
+$form = $this->form;
+$form->setAttribute('action', $this->url('users',array('action' => 'edit','id'     => $this->id,)));
+$form->prepare();
+echo $this->form()->openTag($form);
+echo $this->formHidden($form->get('user_id')); ?>
+<dl class="zend_form">
+<dt><?php echo $this->formRow($form->get('username')); ?></dt>
+<dt><?php echo $this->formRow($form->get('display_name')); ?></dt>
+<dt><?php echo $this->formRow($form->get('email')); ?></dt>
+<dt><?php echo $this->formRow($form->get('password')); ?></dt>
+<dt><?php echo $this->formRow($form->get('role')); ?></dt>
+
+
+<dt><?php echo $this->formRow($form->get('state')); ?></dt>
+<br/><dt><?php echo $this->formSubmit($form->get('submit')); ?></dt>
+</dl>
+<?php echo $this->form()->closeTag(); ?>

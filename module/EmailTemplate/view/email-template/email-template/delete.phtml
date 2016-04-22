@@ -1,0 +1,22 @@
+<?php
+$title = 'Delete Email Template';
+$this->headTitle($title);
+?>
+
+<p style="margin:25px 0;">Are you sure that you want to delete
+    '<?php echo $this->escapeHtml($result->name); ?>'?
+</p>
+<?php
+$url = $this->url('email-template', array(
+    'action' => 'delete',
+    'pkey'     => $this->pkey,
+));
+?>
+<form action="<?php echo $url; ?>" method="post">
+<div>
+    <input type="hidden" name="pkey" value="<?php echo (int) $result->pkey; ?>" />
+    <input type="submit" name="del" class="btn btn-default" value="Yes" style="margin-left:0;" />
+    <input type="submit" name="del" class="btn btn-default" value="No" style="margin-left:0;" />
+</div>
+</form>
+

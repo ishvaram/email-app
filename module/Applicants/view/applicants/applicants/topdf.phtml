@@ -1,0 +1,326 @@
+<?php
+
+/* 
+ * Applied Job Detail View Template 
+ */
+
+use Zend\Escaper\Escaper;
+$escaper = new Escaper('utf-8');
+
+?>
+<style>
+    .table-doc-licensestypeapp{
+        border: 1px solid #dddddd;
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 2%;
+    }
+    .table-doc-licensestypeapp .title-heading{
+        line-height: 1.42857;
+        padding: 8px;
+        text-align: left;
+        background: #6faed9;
+        font-weight: bold;
+    }
+    .table-doc-licensestypeapp .title-box-heading{
+        background: #efefef;
+        font-weight: bold;
+        padding: 8px;
+        text-align: center;
+    }    
+    .table-doc-licensestypeapp .title-box, .table-doc-licensestypeapp .title-box-heading{
+        border: 1px solid #dddddd;
+        line-height: 1.42857;
+        padding: 4px;
+        vertical-align: middle;
+    }
+</style>
+<h4>Application for Employment with <?php echo $job->partner?> </h4>
+
+<p style="font-size: 15px;">Position Applied For: <?php echo $job->job_name?></p>
+
+<?php 
+$col_count = 0;
+$exp_count = 0;
+if(count($result)>0): ?>
+<table class="zend-form">
+    <?php foreach($result as $res):
+    if($res['key'] != 'S_LastName' && $res['key'] != 'S_FirstName' && $res['key'] != 'S_FirstName' 
+       && $res['key'] != 'S_MiddleName' && $res['key'] != 'S_Gender' && $res['key'] != 'S_Veteran' 
+       && $res['key'] != 'S_Hispanic' && $res['key'] != 'S_AmerIndAlaskNativ' && $res['key'] != 'S_Asian' 
+       && $res['key'] != 'S_BlackAfricAmer' && $res['key'] != 'S_NativHawaiiPacIsland' && $res['key'] != 'S_White' 
+       && $res['key'] != 'S_TwoMoreRace' && $res['key'] != 'S_NotDiscl' && $res['key'] != 'S_DemoDate' ) {
+    
+    ?>
+    <?php
+    //College Info Array
+    $coll_array = array('S_CollegeAddress1','S_CollegeTelephoneNo1','S_IscollegeGraduate','S_GradePointAvg','S_NoOfHours','S_DegreeListEnum_pkey','S_DegreeOther','S_MajorListEnum_pkey','S_MajorOther','S_Minor'); 
+    if(in_array($res['key'], $coll_array)){
+        continue;
+    }
+    //Experience Array
+    $exp_array = array('S_EmplAdd1','S_EmplTele1','S_EmplBuss1','S_Position1','S_Salary1','S_ImmedSupervisor1','S_CurrentEmployer1','S_ReasonLeaving1','S_OtherReasonLeaving1','S_StartDate1','S_EndDate1'); 
+    if(in_array($res['key'], $exp_array)){
+        continue;
+    }
+    if($res['key']=='S_College1') {
+        $col_count = count(json_decode($res['value']));   
+        if($col_count==0){
+            $col_count = 1;
+        }                      
+        $col_name_array = json_decode($result['S_College1']['value']);
+        $col_add_array = json_decode($result['S_CollegeAddress1']['value']);
+        $col_phone_array = json_decode($result['S_CollegeTelephoneNo1']['value']);
+        $col_grad_array = json_decode($result['S_IscollegeGraduate']['value']);
+        $col_grade_array = json_decode($result['S_GradePointAvg']['value']);
+        $col_hour_array = json_decode($result['S_NoOfHours']['value']);
+        $col_degree_array = json_decode($result['S_DegreeListEnum_pkey']['value']);
+        $col_degree_other_array = json_decode($result['S_DegreeOther']['value']);
+        $col_major_array = json_decode($result['S_MajorListEnum_pkey']['value']);
+        $col_major_other_array = json_decode($result['S_MajorOther']['value']);
+        $col_minor_other_array = json_decode($result['S_Minor']['value']);
+        echo '<tr><td colspan=3><b><u>College Information</u></b></td></tr>';
+        for($i=0;$i<$col_count;$i++){
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Name</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_name_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Address</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_add_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Telephone No</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_phone_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Did you graduate?</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_grad_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Grade Point Average (G.P.A)</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_grade_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Number of hours completed</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_hour_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Degree obtained</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_degree_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>If other, please specify</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_degree_other_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Major</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_major_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>If other, please specify</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_major_other_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Concentration / Minor</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$col_minor_other_array[$i].'</td>';
+            echo '</tr>';
+            //line 
+            echo '<tr>';
+            echo '<td colspan=3 style="border-top:2px solid #EFEFEF;padding: 0px;" valign="top" align="left">&nbsp;</td>';            
+            echo '</tr>';             
+        }         
+        
+    } else if($res['key']=='S_Empl1'){
+        $exp_count = count(json_decode($res['value']));   
+        if($exp_count==0){
+            $exp_count = 1;
+        }
+        $exp_name_array = json_decode($result['S_Empl1']['value']);
+        $exp_add_array = json_decode($result['S_EmplAdd1']['value']);
+        $exp_phone_array = json_decode($result['S_EmplTele1']['value']);
+        $exp_buss_array = json_decode($result['S_EmplBuss1']['value']);        
+        $exp_pos_array = json_decode($result['S_Position1']['value']);
+        $exp_salary_array = json_decode($result['S_Salary1']['value']);
+        $exp_immed_array = json_decode($result['S_ImmedSupervisor1']['value']);
+        $exp_emp_array = json_decode($result['S_CurrentEmployer1']['value']);
+        $exp_leaving_array = json_decode($result['S_ReasonLeaving1']['value']);
+        $exp_leaving_other_array = json_decode($result['S_OtherReasonLeaving1']['value']);
+        $exp_start_array = json_decode($result['S_StartDate1']['value']);
+        $exp_end_array = json_decode($result['S_EndDate1']['value']);        
+        echo '<tr><td colspan=3><b><u>Experience</u></b></td></tr>';
+        for($i=0;$i<$exp_count;$i++){
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Employer Name</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_name_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Address</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_add_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Telephone No</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_phone_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Kind of Business</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_buss_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Position</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_pos_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Salary</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_salary_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Supervisor name</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_immed_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Current Employer?</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_emp_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>Reason for Leaving?</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_leaving_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>If other, please specify</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_leaving_other_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>From</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_start_array[$i].'</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td style="width: 50%;" valign="top" align="left"><b>To</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$exp_end_array[$i].'</td>';
+            echo '</tr>';
+            //line 
+            echo '<tr>';
+            echo '<td colspan=3 style="border-top:2px solid #EFEFEF;padding: 0px;" valign="top" align="left">&nbsp;</td>';            
+            echo '</tr>';             
+        }
+    } 
+    else if($job->partner == 'Concordia' && ($res['key']=='S_ConRefLocation' || $res['key']=='S_AppCountry' || $res['key']=='S_TeachingExp' || $res['key']=='S_HereAboutUs'))
+    {
+        echo '<tr>';
+			echo '<td style="width: 50%;" valign="top" align="left"><b>'.$res['label'].'</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$res['value'].'</td>';
+			echo '</tr>'; 
+            echo '<tr>';
+            echo '<td colspan=3 style="border-top:2px solid #EFEFEF;padding: 0px;" valign="top" align="left">&nbsp;</td>';            
+            echo '</tr>';
+    }
+    else if($job->partner != 'Concordia' &&($res['key']=='S_AvailableDate' || $res['key']=='S_Pazip' || $res['key']=='S_ForeignLanguage' || $res['key']=='S_CanYouTravel')){
+            echo '<tr>';
+			echo '<td style="width: 50%;" valign="top" align="left"><b>'.$res['label'].'</b></td>';
+            echo '<td style="width: 5%;">:</td>';
+            echo '<td style="width: 45%;" valign="top" align="left">'.$res['value'].'</td>';
+			echo '</tr>'; 
+            echo '<tr>';
+            echo '<td colspan=3 style="border-top:2px solid #EFEFEF;padding: 0px;" valign="top" align="left">&nbsp;</td>';            
+            echo '</tr>'; 
+    }
+    else if($job->partner == 'Concordia' && ($res['key']=='S_Gender' || $res['key']=='S_Ethnicity' || $res['key']=='S_Veteran' || $res['key']=='S_AmerIndAlaskNativ' || $res['key']=='S_Asian' || $res['key']=='S_BlackAfricAmer' || $res['key']=='S_NativHawaiiPacIsland' || $res['key']=='S_White')) 
+    {
+        continue;
+    }
+    else {
+    ?>
+    
+    <tr>
+        <td style="width: 50%;" valign="top" align="left"><b><?php echo $escaper->escapeHtml($res['label'])?></b></td>
+        <td style="width: 5%;">:</td>
+        <td style="width: 45%;" valign="top" align="left"><?php echo $escaper->escapeHtml($res['value'])?></td>
+    </tr>
+        
+    <?php
+    
+    }
+    //Check for Add More Option    
+    //echo '<pre>';print_r($res);echo '</pre>';
+    //$add_more_data = json_decode($res['value']); 
+    //echo '<pre>';print_r($add_more_data);echo '</pre>';
+    
+    
+    //College Info Array
+    //$coll_array = array('S_College1','S_CollegeAddress1','S_CollegeTelephoneNo1','S_IscollegeGraduate','S_GradePointAvg','S_NoOfHours','S_DegreeListEnum_pkey','S_DegreeOther','S_MajorListEnum_pkey','S_MajorOther','S_Minor');
+    
+    /*if(is_array($add_more_data) && count($add_more_data)>0){ 
+        foreach($add_more_data as $add_more){
+        
+    ?>
+        <tr>
+            <td style="width: 50%;" valign="top" align="left"><b><?php echo $escaper->escapeHtml($res['label'])?></b></td>
+            <td style="width: 5%;">:</td>
+            <td style="width: 45%;" valign="top" align="left"><?php echo $escaper->escapeHtml($add_more)?></td>
+        </tr>
+    <?php 
+    }
+        
+        } else { ?>    
+        <tr>
+            <td style="width: 50%;" valign="top" align="left"><b><?php echo $escaper->escapeHtml($res['label'])?></b></td>
+            <td style="width: 5%;">:</td>
+            <td style="width: 45%;" valign="top" align="left"><?php echo $escaper->escapeHtml($res['value'])?></td>
+        </tr>
+    <?php
+        }*/
+    }
+    endforeach; ?>
+</table>
+<?php endif; ?>
+
+<?php if(count($licensestypeapp)>0): ?>
+<br/><br/>
+<table class="table-doc-licensestypeapp"> 
+    <tr><td colspan="7" class="title-heading">License / Certification </td></tr>
+    <tr>
+        <td class="title-box-heading">Document Type</td>
+        <td class="title-box-heading">File Name</td>
+        <td class="title-box-heading">Expiration Date</td>
+        <td class="title-box-heading">State of Issuance</td>
+        <td class="title-box-heading">Licenses Type</td>
+        <td class="title-box-heading">Issuing Agency Name</td>
+        <td class="title-box-heading">Type of Certification</td>
+    </tr>
+    <?php foreach($licensestypeapp as $licensestype){ ?>
+        <tr>
+        <td class="title-box"><?php echo $licensestype->documentType?></td>
+        <td class="title-box"><?php echo $licensestype->filename?></td>
+        <td class="title-box"><?php if($licensestype->expirationDate != ''){ echo date('m/d/Y',  strtotime($licensestype->expirationDate));} ?></td>
+        <td class="title-box"><?php echo $licensestype->stateOfIssue ?></td>
+        <td class="title-box"><?php echo $licensestype->licensestype ?></td>
+        <td class="title-box"><?php echo $licensestype->issuingagency ?></td>
+        <td class="title-box"><?php echo $licensestype->certificationtype ?></td> 
+        </tr>            
+    <?php } ?>
+</table>
+<?php endif; ?>

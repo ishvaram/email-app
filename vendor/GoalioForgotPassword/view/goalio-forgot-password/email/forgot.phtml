@@ -1,0 +1,8 @@
+
+FMS received a request to reset the password for your <?php echo $this->escapeHtml($this->email); ?> account. To reset your password, click on the link below:
+
+
+<?php echo $this->serverUrl($this->url('zfcuser/resetpassword', array('userId' => $this->record->getUserId(), 'token' => $this->record->getRequestKey()))); ?>
+
+Thanks,
+FMS Admin.

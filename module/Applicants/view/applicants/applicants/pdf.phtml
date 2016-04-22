@@ -1,0 +1,124 @@
+<?php
+
+/* 
+ * PDF Geneartion for the STU and CU Colleges 
+ * 
+ */
+
+?>
+
+<style>
+.pdf-table {
+    border-collapse: collapse;
+}
+
+.pdf-table, .pdf-table td, .pdf-table th {
+    border: 1px solid black;
+    text-align: left;
+}
+.table-doc-licensestypeapp{
+        border: 1px solid #dddddd;
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 2%;
+    }
+    .table-doc-licensestypeapp .title-heading{
+        line-height: 1.42857;
+        padding: 8px;
+        text-align: left;
+        background: #6faed9;
+        font-weight: bold;
+    }
+    .table-doc-licensestypeapp .title-box-heading{
+        background: #efefef;
+        font-weight: bold;
+        padding: 8px;
+        text-align: center;
+    }    
+    .table-doc-licensestypeapp .title-box, .table-doc-licensestypeapp .title-box-heading{
+        border: 1px solid #dddddd;
+        line-height: 1.42857;
+        padding: 4px;
+        vertical-align: middle;
+    }
+</style>
+
+<h3><?php echo strtoupper($applicant->partners_name)?> EMPLOYMENT APPLICATION SUBMISSION</h3>
+<table>    
+    <tr><td><b>Position Applied For:</b></td><td><?php echo $applicant->job_name?></td></tr>    
+</table>
+<h3>Application Data</h3>
+<table>
+    <tr><td><b>First Name:</b></td><td><?php echo $applicant->firstname?></td></tr>    
+    <tr><td><b>Last Name:</b></td><td><?php echo $applicant->lastname?></td></tr>    
+    <tr><td><b>E-mail:</b></td><td><?php echo $applicant->email?></td></tr>
+    <tr><td><b>Home Phone:</b></td><td><?php echo $applicant->homePhone?></td></tr>
+    <tr><td><b>Work Phone:</b></td><td><?php echo $applicant->workPhone?></td></tr>
+    <tr><td><b>Cell Phone:</b></td><td><?php echo $applicant->cellPhone?></td></tr>
+    <tr><td><b>Address 1:</b></td><td><?php echo $applicant->address?></td></tr>
+    <tr><td><b>Address 2:</b></td><td><?php echo $applicant->address2?></td></tr>
+    <tr><td><b>City:</b></td><td><?php echo $applicant->city?></td></tr>
+    <tr><td><b>Country:</b></td><td><?php echo $applicant->country_name?></td></tr>
+    <tr><td><b>State:</b></td><td><?php echo $applicant->state_name?></td></tr>
+    <tr><td><b>Zip:</b></td><td><?php echo $applicant->zip?></td></tr>
+    <tr><td><b>Are you currently employed?</b></td><td><?php if($applicant->isCurrentlyEmployed==1) echo 'Yes'; else echo 'No';?></td></tr>
+    <tr><td><b>Are you legally authorized to work in the U.S.? </b></td><td><?php if($applicant->isUSAuthorizedWorker==1) echo 'Yes'; else echo 'No';?></td></tr>
+    <?php if(strtolower($applicant->partners_name) != 'concordia'): ?>
+        <tr><td><b>Have you ever been convicted of a felony?</b></td><td><?php if($applicant->isFelonyConvicted==1) echo 'Yes'; else echo 'No';?></td></tr>
+    <?php endif; ?>
+    <tr><td><b>Have you been employed by <?php echo $applicant->partners_name ?> University in the past? </b></td><td><?php if($applicant->isEverEmpInThisUniv==1) echo 'Yes'; else echo 'No';?></td></tr>
+    <tr><td><b>Do you have any relatives employed by <?php echo $applicant->partners_name ?> University?  </b></td><td><?php if($applicant->isAnyRelativesEmployedHere==1) echo 'Yes'; else echo 'No';?></td></tr>
+    <tr><td><b>Religious affiliation:</b></td><td><?php echo $applicant->religion_name?></td></tr>
+    <tr><td><b>If other, please specify the religion?</b></td><td><?php echo $applicant->churchMemOrdenominationalAffiliation?></td></tr>
+    <tr><td><b>Religious congregation:</b></td><td><?php echo $applicant->churchMemOrdenominationalCongregation?></td></tr>
+    <tr><td><b>Describe your teaching philosophy in no more than one page.</b></td><td><?php echo $applicant->teachingPhilosophy?></td></tr>
+    <tr>
+        <td colspan="2"><b>When you are available to teach (check all that apply)</b></td>
+    </tr>
+    <tr>
+        <td colspan="2">
+            <table class="pdf-table">
+                <tr><th><b>Winter</b></th><th><b>Fall</b></th><th><b>Summer</b></th><th><b>Spring</b></th></tr>
+                <tr><td><?php if($applicant->IsWinter==1) echo 'Yes'; else echo 'No';?></td><td><?php if($applicant->IsFall==1) echo 'Yes'; else echo 'No';?></td><td><?php if($applicant->IsSummer==1) echo 'Yes'; else echo 'No';?></td><td><?php if($applicant->IsSpring==1) echo 'Yes'; else echo 'No';?></td></tr>
+            </table>
+        </td>
+    </tr>
+    <tr><td><b>Please list those areas in which you are qualified to teach:</b></td><td><?php echo $applicant->listOfAreaQualifiedToTeach?></td></tr>
+    <tr><td><b>Currently Teaching and/or Administrative Responsibilities:</b></td><td><?php echo $applicant->currentTeachingInfo?></td></tr>
+    <tr><td><b>Educational background:</b></td><td><?php echo $applicant->educationalBackground?></td></tr>
+    <tr><td><b>Honors Received:</b></td><td><?php echo $applicant->honorsRecieved?></td></tr>
+    <tr><td><b>Highest degree attained:</b></td><td><?php echo $applicant->highest_degree?></td></tr>
+    <tr><td><b>List Degree Speciality:</b></td><td><?php echo $applicant->listDegreeSpeciality?></td></tr>
+    <tr><td><b>Total years relevant experience in your profession:</b></td><td><?php echo $applicant->totalExp?></td></tr>
+    <tr><td><b>How many years of online postsecondary teaching experience do you have?</b></td><td><?php echo $applicant->onlinePostsecondaryTeachingExp?></td></tr>
+</table>
+<h3>References - Please provide the names and contact information of three individuals whom you have or had a working</h3>
+<table class="pdf-table">     
+    <tr>
+        <th><b>Name</b></th>
+        <th><b>Phone number</b></th>
+        <th><b>Email Address</b></th>
+    </tr>  
+    <tr>
+        <td><?php echo $applicant->referenceName?></td>            
+        <td><?php echo $applicant->referencePhoneNumber?></td>
+        <td><?php echo $applicant->referenceEmail?></td>
+    </tr> 
+    <tr>
+        <td><?php echo $applicant->referenceName2?></td>
+        <td><?php echo $applicant->referencePhoneNumber2?></td>
+        <td><?php echo $applicant->referenceEmail?></td>
+    </tr> 
+    <tr>
+        <td><?php echo $applicant->referenceName3?></td>            
+        <td><?php echo $applicant->referencePhoneNumber3?></td>
+        <td><?php echo $applicant->referenceEmail?></td>
+    </tr>     
+</table>
+<br/><br/><br/>
+<table>
+    <tr><td><b>How did you learn about this position?</b></td><td><?php $applicant->hereAboutUs?></td> </tr>
+    <tr><td><b>Signature (Type in Name)</b></td><td><?php echo $applicant->signature?></td></tr>
+    <tr><td><b>Application Date</b></td><td><?php echo date('m-d-Y',  strtotime($applicant->AppliedDate)) ?></td></tr>
+    <tr><td><b>Today's Date</b></td><td><?php echo date('m-d-Y') ?></td></tr>
+</table>

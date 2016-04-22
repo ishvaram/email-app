@@ -1,0 +1,41 @@
+<?php
+$title = 'Edit Email';
+$this->headTitle($title);
+?>
+<h3><?php echo $this->escapeHtml($title); ?></h3>
+<script>
+    $(document).ready(function(){                      
+        $("input[name='curic_date'], input[name='curic_date']").datepicker({
+             dateFormat: 'yy-mm-dd',
+             changeMonth: true,
+             changeYear: true             
+        });
+    }); 
+    function isNumberKeyConfig(evt)
+    {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        //if (charCode > 31 && (charCode < 46 || charCode > 57 || charCode == 47))
+        if (charCode > 31 && (charCode < 46 || charCode > 57))
+           return false;
+        return true;
+    }
+</script>
+<?php
+$form = $this->form;
+$form->setAttribute('action', $this->url('emailapp',array('action' => 'edit','id'  => $this->id,)));
+$form->prepare();
+echo $this->form()->openTag($form);
+echo $this->formHidden($form->get('curic_id')); ?>
+<dl class="zend_form">
+<dt><?php echo $this->formRow($form->get('curic_code')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_title')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_desc')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_version')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_url')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_date')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_type')); ?></dt>
+<dt><?php echo $this->formRow($form->get('curic_class')); ?></dt>
+<dt><br/><?php echo $this->formSubmit($form->get('submit')); ?>&nbsp;&nbsp;
+<a href="<?php echo $this->url('emailapp');?>" class="btn btn-large btn-primary">Cancel</a></dt>
+</dl>
+<?php echo $this->form()->closeTag(); ?>

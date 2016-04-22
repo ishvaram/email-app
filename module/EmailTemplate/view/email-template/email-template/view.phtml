@@ -1,0 +1,55 @@
+<?php
+
+$title = 'View Email Template';
+$this->headTitle($title);
+?>
+
+<table class="table">
+ <tr>
+    <th width="300">Template Name</th>
+    <td width="25">:</td>
+    <td><?php echo $this->escapeHtml($result->name);?></td>
+ </tr> 
+ <tr>
+    <th width="300">University</th>
+    <td width="25">:</td>
+    <td><?php echo $this->escapeHtml($result->university_name);?></td>
+ </tr>
+ <tr>
+    <th width="300">From Name</th>
+    <td width="25">:</td>
+    <td><?php echo $this->escapeHtml($result->from_name);?></td>
+ </tr> 
+ <tr>
+    <th width="300">From Email</th>
+    <td width="25">:</td>
+    <td><?php echo $this->escapeHtml($result->from_email);?></td>
+ </tr>
+ <tr>
+    <th width="300">Subject</th>
+    <td width="25">:</td>
+    <td><?php echo $this->escapeHtml($result->subject);?></td>
+ </tr> 
+ <tr>
+    <th width="300">Body</th>
+    <td width="25">:</td>
+    <td><?php echo $this->escapeHtml($result->body);?></td>
+ </tr> 
+  <tr>
+    <th width="300">Body</th>
+    <td width="25">:</td>
+    <td>
+    <?php 
+    if($result->status==0){
+        echo 'In-Active';
+    } else {
+        echo 'Active';
+    }
+    ?>
+    </td>
+ </tr>
+ <tr>
+     <td width="300" colspan="3"><a href="<?php echo $this->url('email-template');?>" class="btn btn-large btn-primary">Cancel</a></td>
+       
+    </tr>
+</table>

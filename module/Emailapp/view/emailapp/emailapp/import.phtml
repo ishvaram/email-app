@@ -1,0 +1,31 @@
+<?php
+$title = 'Import Email List';
+$this->headTitle($title);
+?><h3><?php echo $this->escapeHtml($title); ?></h3><br><br>
+<script>
+    function checkFile(fieldObj)
+    {
+        var FileName  = fieldObj.value;
+        var FileExt = FileName.substr(FileName.lastIndexOf('.')+1);
+        /*if(FileExt != 'csv')
+        {
+            alert('Please upload only CSV file.');
+        }   */ 
+        return true;
+    }
+</script>
+<?php
+$form = $this->form;
+$form->setAttribute('action', $this->url('emailapp', array('action' => 'import')));
+$form->prepare();
+echo $this->form()->openTag($form);
+?>
+<dl class="zend_form" style="width: 50%">
+<dt><?php echo $this->formRow($form->get('fileupload')); ?></dt> 
+<dt><span style="font-size: 10px; color: #843534;">Note: <br> Please upload only CSV file.
+</span></dt>
+<dt><br/><?php echo $this->formSubmit($form->get('submit')); ?>&nbsp;&nbsp;
+<a href="<?php echo $this->url('emailapp');?>" class="btn btn-large btn-primary">Cancel</a>
+</dt>
+</dl>
+<?php echo $this->form()->closeTag(); ?> 

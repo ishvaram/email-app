@@ -1,0 +1,89 @@
+<?php
+$title = 'Edit Email Template';
+$this->headTitle($title);
+?>
+<h3><?php echo $this->escapeHtml($title); ?></h3>
+<script type="text/javascript">
+function getJobList(univ)
+{
+    $.ajax({
+        url: "<?php echo $this->url('email-template',array('action'=>'getJobList'))?>",
+        type: 'POST',
+        data: ({ univ: univ }),
+        dataType: 'JSON',
+        success: function(response) {                                    
+            var items = [];
+            items.push( "<option value=''>Select Job</option>" );
+            $.each( response, function( key, val ) {                
+                items.push( "<option value='" + key + "'>" + val + "</option>" );
+            });                    
+            $("select[name='job[]']").html(items);
+         }
+   });
+}
+//Onload -- Load Selected University Jobs
+var univ_sel = <?php echo $template->university; ?>;
+var job_sel = '<?php echo $template->job; ?>';
+getSelectedJobList(univ_sel,job_sel);
+function getSelectedJobList(univ,job)
+{
+    $.ajax({
+        url: "<?php echo $this->url('email-template',array('action'=>'getSelectedJobList'))?>",
+        type: 'POST',
+        data: ({ univ: univ, job:job }),
+        dataType: 'html',
+        success: function(response) {                  
+            $("select[name='job[]']").html(response);
+         }
+   });
+}
+</script>
+<?php
+$form = $this->form;
+$form->setAttribute('action', $this->url('email-template',array('action' => 'edit','pkey'=> $this->pkey,)));
+$form->prepare();
+echo $this->form()->openTag($form);
+echo $this->formHidden($form->get('pkey')); ?>
+
+<table class="table-form">
+    <tr>                 
+        <td class="title"><?php echo $this->formLabel($form->get('name')); ?></td>
+        <td><?php echo $this->formText($form->get('name')); ?></td>
+    </tr>
+    <tr>                 
+        <td class="title"><?php echo $this->formLabel($form->get('from_name')); ?></td>
+        <td><?php echo $this->formText($form->get('from_name')); ?></td>
+    </tr> 
+    <tr>                 
+        <td class="title"><?php echo $this->formLabel($form->get('from_email')); ?></td>
+        <td><?php echo $this->formText($form->get('from_email')); ?></td>
+    </tr>
+    <tr>                 
+        <td class="title"><?php echo $this->formLabel($form->get('subject')); ?></td>
+        <td><?php echo $this->formText($form->get('subject')); ?></td>
+    </tr>    
+    <tr>                 
+        <td class="title"><?php echo $this->formLabel($form->get('body')); ?></td>
+        <td><?php echo $this->formTextarea($form->get('body')); ?></td>
+    </tr>
+    <tr>
+        <td class="title">&nbsp;</td>
+        <td><b>Applicant Name = {user}, Job Title = {job_title}, Previous Status = {previous_status}, Current Status = {current_status} </b></td>
+    </tr>
+    <tr>                 
+        <td class="title"><?php echo $this->formLabel($form->get('status')); ?></td>
+        <td><?php echo $this->formSelect($form->get('status')); ?></td>
+    </tr>         
+    <tr>
+        <td>&nbsp;</td>
+        <td>
+            <?php echo $this->formSubmit($form->get('submit')); ?>&nbsp;&nbsp;
+            <a href="<?php echo $this->url('email-template');?>" class="btn btn-large btn-primary">Cancel</a>
+        </td>
+    </tr>
+</table>
+
+<?php echo $this->form()->closeTag(); ?>
+<script type="text/javascript">    
+    make_wyzz('textarea-editor');
+</script>

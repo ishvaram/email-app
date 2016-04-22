@@ -1,0 +1,1951 @@
+<?php
+/* 
+ * Applicants - Edit View 
+ */
+
+$title = 'Applicants - ';
+$this->headTitle($title); 
+$url="http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+$param = parse_url($url);
+$paramArr = explode('/',$param['path']);
+$tab_selected = isset($paramArr[4]) ? $paramArr[4] : ''; 
+
+use Zend\Escaper\Escaper;
+$escaper = new Escaper('utf-8');
+
+?>
+<h3> Applicants</h3>
+<?php
+if($this->flashMessenger()->render('error')!='') 
+{
+    echo '<div class="alert alert-error">'.$this->flashMessenger()->render('error').'</div>';
+}
+if($this->flashMessenger()->render('success')!='') 
+{
+    echo '<div class="alert alert-success">'.$this->flashMessenger()->render('success').'</div>';
+}
+if($this->flashMessenger()->render('info')!='') 
+{
+    echo '<div class="alert alert-info">'.$this->flashMessenger()->render('info').'</div>';
+}
+?>
+
+<script type="text/javascript">
+    $(function() {
+        $("#tabs").tabs();
+        $("#status-tab").tabs();
+        $(".datepicker").datepicker({
+            dateFormat: 'yy-mm-dd',
+            changeMonth: true,
+            changeYear: true
+        });
+        
+        //File Upload 
+        $('#fileupload, #fileupload2, #fileupload3').fileupload({
+            url: "<?php echo $this->url('applicants',array('action'=>'uploadFile'))?>",
+            dataType: 'json',
+            singleFileUploads: true,
+            add: function (e, data) {                
+                var formID = $(this).attr("id");
+                if(formID=='fileupload3')
+                {
+                    var fileType = data.files[0].name.split('.').pop(), allowdtypes = 'doc,docx,pdf,jpeg,jpg,png,gif,xls,xlsx';
+                }
+                 if(formID=='fileupload')
+                {
+                    var fileType = data.files[0].name.split('.').pop(), allowdtypes = 'doc,docx,pdf';
+                }
+                else
+                {
+                    var fileType = data.files[0].name.split('.').pop(), allowdtypes = 'doc,docx,pdf,jpeg,jpg,png,gif';
+                }
+                 //dependent on the File API in HTML 5 - checking file size before upload
+                if ( window.FileReader && window.File && window.FileList && window.Blob ){
+                    var fileSize = data.files[0].size;
+                    if(fileSize > 8000000) {
+                        alert('File size limited to 8 megabytes or less, aborted.');
+                        return false;
+                    }
+                }
+                if (allowdtypes.indexOf(fileType) < 0) {
+                    alert('Invalid file type, aborted');
+                    return false;
+                }  
+                else
+                {
+                    $("#files").html("Uploading...");
+                    data.submit();
+                }    
+            },
+            done: function (e, data) {               
+                <?php if($job->partner=='Adler' || $job->partner=='Wilkes'){ ?>
+                var pkey = 0;
+                var doc_pkey = 0;
+                $.each(data.result.files, function(index, file){
+                    if(index==1){
+                        pkey = file['pkey'];
+                    }    
+                    if(index==2){
+                        doc_pkey = file['doc_pkey'];
+                    }
+                });
+                var uploadID = $(this).attr("id");                
+                //Redirect to edit page                 
+                if(uploadID=='fileupload2' && pkey>0 && doc_pkey>0){                    
+                    window.location = '/applicants/edit/'+pkey+'/'+pkey+'/1/'+doc_pkey;                    
+                }    
+                else if(pkey>0){
+                    window.location = "<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$pkey,'tab'=>1))?>";                   
+                }                
+                <?php } else { ?>
+                $.each(data.result.files, function (index, file) {   
+                    //alert(file['error']);
+                    $("#files").html("Upload finished.");  
+                    window.location = "<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$pkey,'tab'=>1))?>";
+                });                 
+                <?php } ?>
+            },                           
+            error: function (e,data) {
+                $.each(data.files, function (index) {
+                    alert("File upload failed.");                    
+                });
+            }           
+        });
+        
+        //Checkbox selected
+        $(".check-doc-all").on("click", function() {		
+            var all = $(this);            
+            var name = $(this).attr("text");
+            $('input[name="'+name+'[]"]:checkbox').each(function() {
+                $(this).prop("checked", all.prop("checked"));
+            });
+        });	
+        $('input[type=radio][name=documentType]').change(function() {
+            $(".open-license").hide();
+            var id = $(this).attr('id');
+            $("."+id).show();
+        });
+        $('input[type=radio][name=documentType]').each(function () {
+            if($(this).is(':checked')) { 
+                var id = $(this).attr('id');
+                $("."+id).show();
+            }
+        });    
+        //Open popup for document type License/Certification
+        $(".edit-dialog-form").hide();
+        <?php if($doc_pkey >0): ?>
+            var dialog;
+            dialog = $( "#dialog-form" ).dialog({
+               autoOpen: true,
+               closeOnEscape: false,
+               open: function(event, ui) { $(".ui-dialog-titlebar-close").hide(); },
+               width: 450,
+               modal: true
+            });        
+        <?php endif; ?>
+        //Open edit popup for document type License/Certification
+        $(".editLicenseDoc").click(function(e){
+            e.preventDefault();
+            var id = $(this).attr("id");
+            $("#edit-license-"+id).dialog({
+               autoOpen: true,
+               closeOnEscape: false,
+               open: function(event, ui) { $(".ui-dialog-titlebar-close").hide(); },
+               width: 450,
+               modal: true
+            });            
+        });
+        $('.licensestype-edit').change(function() {            
+            var id = $(this).attr('id');
+            var doc_id = $(this).attr('doc_id');
+            $(".open-license-"+doc_id).hide();
+            $("."+id).show();
+        });
+        $('select[name="LicensesTypeLOV_pkey"]').on('change', function() {           
+            var id = $(this).attr('id');
+            var value = $(this).val();
+            if(value==4){
+                $("."+id).show();
+            } else {
+                $("."+id).hide();
+            }
+        });
+        $('select[name="IssuingAgencyLOV_pkey"]').on('change', function() {           
+            var id = $(this).attr('id');
+            var value = $(this).val();
+            if(value==3){
+                $("."+id).show();
+            } else {
+                $("."+id).hide();
+            }
+        });
+        $('select[name="CertificationTypeLOV_pkey"]').on('change', function() {           
+            var id = $(this).attr('id');
+            var value = $(this).val();
+            if(value==5){
+                $("."+id).show();
+            } else {
+                $("."+id).hide();
+            }
+        });
+        
+        //Social Security No -- display last 4 digits
+        $("input[name='S_SocialSecurityNo']").on("keyup", function() {            
+            var text_value = $(this).val();
+            var text_value1 = $("input[name='SocialSecurityNo1']").val();
+            if (text_value.length > 0) {
+                if (text_value.length > text_value1.length) {
+                    $("input[name='SocialSecurityNo1']").val(text_value1 + text_value.substr(text_value.length - 1, 1));
+                    if (6 > text_value.length) {
+                       $("input[name='S_SocialSecurityNo']").val(text_value.replace(text_value.substr(text_value.length - 1, 1), '*'));
+                    }
+                    text_value = $("input[name='S_SocialSecurityNo']").val();
+                    text_value1 = $("input[name='SocialSecurityNo1']").val();
+                } else {
+                    $("input[name='SocialSecurityNo1']").val(text_value1.substr(0, text_value.length));
+                }                 
+            } else if (text_value1.length > 0) {
+                $("input[name='SocialSecurityNo1']").val('');
+            }  
+        });         
+        //Onload check Social Security No for Wilkes -- display last 4 digits
+        <?php if($job->partner=='Wilkes'){ ?>
+        var socialno = $("input[name='S_SocialSecurityNo']").val();
+        $("input[name='SocialSecurityNo1']").val(socialno);
+        if (socialno.length > 0) {            
+            if (socialno.length>0) {                     
+                socialno = socialno.replace(socialno.substring(0,5), '*****');
+            }    
+            $("input[name='S_SocialSecurityNo']").val(socialno);
+        }  
+        <?php } ?>
+    });    
+    $(document).ready(function(){        
+        <?php if($tab_selected!=''): ?>
+            $( "#tabs" ).tabs({ active: <?php echo $tab_selected;?> });
+        <?php endif; ?>        
+        
+        $("#tabs ul li a").click(function(e){
+            var tab_selected = $(this).attr("href");            
+            if(tab_selected=='#tabs-3')
+            {
+                $.ajax({
+                    url: "<?php echo $this->url('applicants',array('action'=>'ajaxTabApplicationView'))?>",
+                    type: "POST",                    
+                    data: ({'pkey':'<?php echo $pkey; ?>'}),      
+                    beforeSend: function(){
+                      $("#tabs-3").html(' ');
+                    },  
+                    success: function(response) {                      
+                      $("#tabs-3").html(response);
+                    }
+                });
+            }
+        });   
+        
+        //Check Radio Dependent Columns
+        $("input[type='radio']").change(function(e){            
+            var column_name  = $(this).attr('name');
+            var column_value  = $(this).val();
+            //alert(column_value);
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'checkDependencySection'))?>",
+                type: 'POST',                    
+                data: ({pkey:<?php echo $pkey; ?>,column_name: column_name, column_value: column_value}),                 
+                success: function(response) {                      
+                    $.each($.parseJSON(response), function (item, value) {                        
+                        $.each(value.sectionid, function (i, section) {
+                            $("#"+section).attr('style', 'display:'+value.display[i]);
+                        });    
+                    });    
+                }                        
+            }); 
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'checkDependency'))?>",
+                type: 'POST',                    
+                data: ({pkey:<?php echo $pkey; ?>,column_name: column_name, column_value: column_value}),                 
+                success: function(response) {                    
+                    $.each($.parseJSON(response), function (item, value) {
+                        $.each(value.columns, function (i, column) {
+                            $("input[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("label[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("select[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("textarea[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("input[name='"+column+"']").attr('style', 'display:'+value.display[i]+'');
+                            $("textarea[name='"+column+"']").attr('style', 'display:'+value.display[i]+'');
+                            $('label[for="'+column+'"]').attr('style', 'display:'+value.display[i]+'');
+                            $("select[name='"+column+"']").attr('style', 'display:'+value.display[i]+'');
+                            $( "input[name='"+column+"']").parent().css( "display", value.display[i]+'');
+                            if(value.type[i]=='radio' && value.display[i]!='none'){
+                               $('.radiolabel > label').css('display', '');
+                               $("input[name='"+column+"']").attr('style', 'display:""');
+                            }
+                            //Remove attribute for false
+                            if(value.is_required[i]=='false'){
+                                $("input[name='"+column+"']").removeAttr('required');                            
+                                $("select[name='"+column+"']").removeAttr('required');
+                                $("textarea[name='"+column+"']").removeAttr('required');                             
+                            } 
+                        });    
+                    });                   
+                }
+            });            
+        });
+        //on load check dependency.
+        $("input[type='radio']:checked").each(function(){
+            var column_name  = $(this).attr('name');
+            var column_value  = $(this).val();   
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'checkDependencySection'))?>",
+                type: 'POST',                    
+                data: ({pkey:<?php echo $pkey; ?>,column_name: column_name, column_value: column_value}),                 
+                success: function(response) {                      
+                    $.each($.parseJSON(response), function (item, value) {                        
+                        $.each(value.sectionid, function (i, section) {
+                            $("#"+section).attr('style', 'display:'+value.display[i]);
+                        });    
+                    });    
+                }                        
+            });
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'checkDependency'))?>",
+                type: 'POST',                    
+                data: ({pkey:<?php echo $pkey; ?>, column_name: column_name, column_value: column_value}),                 
+                success: function(response) {                    
+                    $.each($.parseJSON(response), function (item, value) {
+                        $.each(value.columns, function (i, column) {
+                            $("input[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("label[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("select[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("textarea[name='"+column+"']").attr('required', value.is_required[i]);
+                            $("input[name='"+column+"']").attr('style', 'display:'+value.display[i]+'');
+                            $("textarea[name='"+column+"']").attr('style', 'display:'+value.display[i]+'');
+                            $('label[for="'+column+'"]').attr('style', 'display:'+value.display[i]+'');
+                            $("select[name='"+column+"']").attr('style', 'display:'+value.display[i]+'');                            
+                            $( "input[name='"+column+"']").parent().css( "display", value.display[i]+'');
+                            if(value.type[i]=='radio' && value.display[i]!='none'){
+                               $('.radiolabel > label').css('display', '');
+                               $("input[name='"+column+"']").attr('style', 'display:""');
+                            }
+                            //Remove attribute for false
+                            if(value.is_required[i]=='false'){
+                                $("input[name='"+column+"']").removeAttr('required');                            
+                                $("select[name='"+column+"']").removeAttr('required');
+                                $("textarea[name='"+column+"']").removeAttr('required');                             
+                            } 
+                        });    
+                    });                   
+                }
+            });
+        });
+    });
+    function openPanel(event,class_name,default_value)
+    {        
+        var name_array = Array();
+        $("."+class_name).find('input:text, input:radio, input:checkbox, select, textarea').each(function() {
+            name_array.push($(this).attr('name'));
+        });        
+        setDefaultValue(name_array);
+        var isOpen = $(event).val();
+        if(isOpen==default_value)
+        {
+            $.each( name_array, function( key,name ) { 
+                $("[name='"+name+"']").attr("required", true);                
+            });           
+            $("."+class_name).show();
+        }
+        else
+        {
+            $.each( name_array, function( key,name ) { 
+                $("[name='"+name+"']").attr("required", false);                
+            });
+            $("."+class_name).hide();
+        }    
+    }    
+    function setDefaultValue(name_array)
+    {
+        var name_json = JSON.stringify(name_array);        
+        $.ajax({
+            url: "<?php echo $this->url('applicants',array('action'=>'ajaxTextEvent'))?>",
+            type: 'POST',
+            dataType: "json",
+            data: ({ pkey:'<?php echo $pkey;?>', input_name: name_json }), 
+            beforeSend: function(){                
+                $("#tabs-1").addClass("ajax-loader");
+            }, 
+            success: function (response) {
+                $.each( response, function( key, value ) {                    
+                    $("input[name='"+key+"']").val(value);
+                    $("textarea[name='"+key+"']").val(value);
+                });
+            },         
+            complete: function(){
+                $("#tabs-1").removeClass("ajax-loader");          
+            }
+        });
+    }
+    function addQualifiedCourse(pkey)
+    {
+        $("#course-add-dialog").dialog({
+           modal: true,
+           autoOpen:true,
+           width: 800,
+           height: 500,
+            buttons: {       
+                "Save":  saveCourses, 
+                Cancel: function() {
+                  $("#course-add-dialog").dialog( "close" );
+                }
+            },
+       }); 
+    }
+    function saveCourses()
+    {
+        if ($(".courses_add_check:checkbox:checked").length > 0)
+        {
+           var form_input_data = $("form#course_add_form").serialize();
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'saveQualifiedCourses'))?>",
+                type: 'POST',                    
+                data: form_input_data,                 
+                success: function(response) {
+                    window.location = "<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$pkey,'tab'=>3))?>";
+                }
+            });
+        }
+        else
+        {
+            alert("Please select any one checkbox.");            
+        }        
+    } 
+    function removeCourses()
+    {
+        var sList = Array();
+        if ($(".courses_remove_check:checkbox:checked").length > 0)
+        {
+            $(".courses_remove_check:checkbox:checked").each(function () {                
+                sList.push($(this).val());
+            });
+        }
+        else
+        {
+           alert("Please select any one checkbox.");
+        }       
+        if(sList.length>0)
+        {
+            var input_data = JSON.stringify(sList);            
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'removeQualifiedCourses'))?>",
+                type: 'POST',                    
+                data: ({party_course_ids: input_data,Newapplication_pkey: '<?php echo $pkey;?>'}),                 
+                success: function(response) {                    
+                    window.location = "<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$pkey,'tab'=>3))?>";
+                }
+            });
+        }        
+    } 
+    function removeDocs()
+    {
+        var sList = Array();
+        var sType = Array();
+        if ($(".docs_check:checkbox:checked").length > 0)
+        {
+            $(".docs_check:checkbox:checked").each(function () {                
+                sList.push($(this).val());
+                sType.push($(this).attr('name').replace("_check[]",""));
+            });
+        }
+        else
+        {
+           alert("Please select any one checkbox.");
+        }          
+        if(sList.length>0)
+        {
+            var input_data = JSON.stringify(sList);  
+            var doc_type = JSON.stringify(sType);  
+            $.ajax({
+                url: "<?php echo $this->url('applicants',array('action'=>'removeDocs'))?>",
+                type: 'POST',                    
+                data: ({docs_ids: input_data,docs_type: doc_type,Newapplication_pkey: '<?php echo $pkey;?>'}),                 
+                success: function(response) {                    
+                    window.location = "<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$pkey,'tab'=>1))?>";
+                }
+            });
+        }
+    }
+    function candidateApproved()
+    {
+        var sList = Array();
+        if ($("input[name='is_approved[]']:checkbox:checked").length > 0)
+        {
+            $("input[name='is_approved[]']:checkbox:checked").each(function () {                
+                sList.push($(this).val());                
+            });
+        }  
+        var input_data = JSON.stringify(sList);              
+        $.ajax({
+            url: "<?php echo $this->url('applicants',array('action'=>'saveCandidateApproved'))?>",
+            type: 'POST',                    
+            data: ({party_course_ids: input_data,Newapplication_pkey: '<?php echo $pkey;?>'}),                 
+            success: function(response) {                    
+                window.location = "<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$pkey,'tab'=>3))?>";
+            }
+        });         
+    }
+    function IsRequired(pkey,value){        
+        var expiration_class = 'expi_date_'+pkey;
+        if(value==1){
+            $("."+expiration_class).attr('required',true);
+        } else {
+            $("."+expiration_class).attr('required',false);
+        }    
+    }
+    function IsRequiredNew(value){        
+        var expiration_class = 'expi_date';
+        if(value==1){
+            $("."+expiration_class).attr('required',true);
+        } else {
+            $("."+expiration_class).attr('required',false);
+        }    
+    }
+    function loadcollegeGradRadio(current_value,i){
+        var clone_class = 'add_collegeInfo_append_'+i;
+        if(current_value=='N'){
+            $("."+clone_class+" table.loadCollegeGradRadio").css('display','block');
+            $("."+clone_class+" table.loadCollegeGradRadio label").css('display','block');
+            $("."+clone_class+" table.loadCollegeGradRadio input").css('display','block');
+            $("."+clone_class+" table.loadCollegeGradRadio td").css('display','inline-block');
+            $("."+clone_class+" table.loadCollegeGradRadio input").attr('required','required');
+        } else {
+            $("."+clone_class+" table.loadCollegeGradRadio").css('display','none');
+            $("."+clone_class+" table.loadCollegeGradRadio label").css('display','none');
+            $("."+clone_class+" table.loadCollegeGradRadio input").css('display','none');
+            $("."+clone_class+" table.loadCollegeGradRadio td").css('display','none');
+            $("."+clone_class+" table.loadCollegeGradRadio input").removeAttr('required');
+        }
+    }
+    function loademployerRadio(current_value,i){
+        var clone_class = 'add_employerInfo_append_'+i;
+        if(current_value=='N'){
+            $("."+clone_class+" table.loadEmployerRadio").css('display','block');
+            $("."+clone_class+" table.loadEmployerRadio label").css('display','block');
+            $("."+clone_class+" table.loadEmployerRadio input").css('display','block');
+            $("."+clone_class+" table.loadEmployerRadio select").css('display','block');
+            $("."+clone_class+" table.loadEmployerRadio td").css('display','inline-block');
+            $("."+clone_class+" table.loadEmployerRadio input").attr('required','required');
+            $("."+clone_class+" table.loadEmployerRadio select").attr('required','required');
+        } else {
+            $("."+clone_class+" table.loadEmployerRadio").css('display','none');
+            $("."+clone_class+" table.loadEmployerRadio label").css('display','none');
+            $("."+clone_class+" table.loadEmployerRadio input").css('display','none');
+            $("."+clone_class+" table.loadEmployerRadio select").css('display','none');
+            $("."+clone_class+" table.loadEmployerRadio td").css('display','none');
+            $("."+clone_class+" table.loadEmployerRadio input").removeAttr('required');
+            $("."+clone_class+" table.loadEmployerRadio select").removeAttr('required');
+        }
+    }
+</script>
+
+<!--License/Certification For Adler AND Wilkes-->
+<?php if($job->partner=='Adler' || $job->partner=='Wilkes'){?>
+<?php if($doc_pkey >0): ?>
+<div id="dialog-form" title="License">
+    <form action="<?php echo $this->url('applicants', array('action'=>'addLicense')) ?>" method="post" name="LicenseFileUploadForm" id="LicenseFileUploadForm">
+        <table class="appl-table-form">
+            <tr>
+                <td width="200px"><label>Document Type </label><label style="color: red;">&nbsp;*</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td>
+                    <input type="radio" required="required" value="License" name="documentType" id="license_radio"><label>&nbsp;&nbsp;License</label>
+                </td>
+                <td>
+                    <input type="radio" required="required" value="Certification" name="documentType" id="certificate_radio"><label>&nbsp;&nbsp;Certification</label>
+                </td>
+            </tr>
+            <tr>
+                <td width="200px"><label>File Name</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td colspan="2"><?php echo $escaper->escapeHtml($doc_file_name);?></td>                
+            </tr>            
+            <?php if($job->partner=='Adler'){ ?>
+            <tr><td class="open-license license_radio" colspan="4" style="display:none;"><table>
+                <tr>
+                    <td width="250px"><label>Licenses Type  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="licensestype" class="form-control-element" />                       
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license license_radio" colspan="4" style="display:none;"><table>    
+                <tr>
+                    <td width="200px"><label>State of Issuance </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="stateOfIssue" class="form-control-element" required="required"/>
+                    </td>
+                </tr>
+            </table></td></tr>    
+            <tr><td class="open-license certificate_radio" colspan="4"  style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Issuing Agency Name  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="issuingagency" class="form-control-element" /> 
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license certificate_radio" colspan="4"  style="display:none;"><table>    
+                <tr>
+                    <td width="200px"><label>Type of Certification </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="certificationtype" class="form-control-element" />
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr>
+               <td width="200px"><label>Does document expire? </label><label style="color: red;">&nbsp;*</label></td>
+               <td>&nbsp;&nbsp;</td>
+               <td colspan="2">
+                   <select name="S_Expiration" onchange="IsRequiredNew(this.value)" class="form-control" required="required">
+                       <option value="">-Select-</option>
+                       <option value="1">Yes</option>
+                       <option value="0">No</option>
+                    </select>                       
+                </td>
+            </tr>
+            <tr>
+                <td width="200px"><label>Expiration Date</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td colspan="2">
+                    <input type="text" name="expirationDate" class="form-control-element datepicker expi_date" />
+                </td>
+            </tr>
+            <?php } ?>
+            <?php if($job->partner=='Wilkes'){ ?>
+            <tr><td class="open-license license_radio" colspan="4" style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Licenses Type  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">                       
+                        <?php if(count($licensestypelov)>0){?>
+                        <select name="LicensesTypeLOV_pkey" id="license_other" class="form-control-select">
+                            <?php foreach($licensestypelov as $key => $name) { ?>
+                            <option value="<?php echo $key?>"><?php echo $name ?> </option>
+                            <?php } ?>
+                        </select>                       
+                        <?php } ?>
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license license_other" colspan="4" style="display:none;"><table>
+                <tr> 
+                    <td width="250px"><label>If other, please specify. </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="otherlicensestype" class="form-control-element"  />
+                    </td>
+                </tr>
+            </table></td></tr> 
+            <tr><td class="open-license license_radio" colspan="4" style="display:none;"><table>    
+                <tr>
+                    <td width="200px"><label>State of Issuance </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="stateOfIssue" class="form-control-element" required="required"/>
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license certificate_radio" colspan="4"  style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Issuing Agency Name  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <?php if(count($issuingagencylov)>0){?>
+                        <select name="IssuingAgencyLOV_pkey" id="issuing_agency_other" class="form-control-select">
+                            <?php foreach($issuingagencylov as $key => $name) { ?>
+                            <option value="<?php echo $key?>"><?php echo $name ?> </option>
+                            <?php } ?>
+                        </select>                       
+                        <?php } ?> 
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license issuing_agency_other" colspan="4" style="display:none;"><table>
+                <tr> 
+                    <td width="250px"><label>If other, please specify. </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="otherissuingagency" class="form-control-element"  />
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license certificate_radio" colspan="4"  style="display:none;"><table>    
+                <tr>
+                    <td width="200px"><label>Type of Certification </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">                        
+                        <?php if(count($certificationtypelov)>0){?>
+                        <select name="CertificationTypeLOV_pkey" id="certificate_other" class="form-control-select">
+                            <?php foreach($certificationtypelov as $key => $name) { ?>
+                            <option value="<?php echo $key?>"><?php echo $name ?> </option>
+                            <?php } ?>
+                        </select>                       
+                        <?php } ?>                        
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license certificate_other" colspan="4" style="display:none;"><table>
+                <tr> 
+                    <td width="200px"><label>If other, please specify. </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="othercertificationtype" class="form-control-element"  />
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr>
+                <td width="200px"><label>Expiration Date</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td colspan="2">
+                    <input type="text" name="expirationDate" required="required" class="form-control-element datepicker expi_date" />
+                </td>
+            </tr>
+            <?php } ?>
+            
+            <tr><td colspan="4">&nbsp;</td></tr>
+            <tr>
+                <td colspan="4" style="text-align:right;"><input id="submit" type="submit" value="Submit" class="btn btn-large btn-primary"></td>
+            </tr>    
+        </table>
+        <input type="hidden" name="NewApplication_pkey" value="<?php echo $pkey;?>" />
+        <input type="hidden" name="pkey" value="<?php echo $doc_pkey;?>" />
+    </form>    
+</div>
+<?php endif; ?>
+<!--License/Certification for edit -->
+<?php if(count($licensestypeapp)>0):
+    foreach($licensestypeapp as $licensestype):
+ ?>
+<div class="edit-dialog-form" id="edit-license-<?php echo $licensestype->pkey ?>" title="License">
+    <form action="<?php echo $this->url('applicants', array('action'=>'addLicense')) ?>" method="post" name="LicenseFileUploadForm" >
+        <table class="appl-table-form">
+            <tr>
+                <td width="200px"><label>Document Type</label><label style="color: red;">&nbsp;*</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td>
+                    <input type="radio" required="required" doc_id="<?php echo $licensestype->pkey ?>" class="licensestype-edit" value="License" <?php if($licensestype->documentType=='License') echo 'checked="checked"'?> name="documentType" id="license_radio_<?php echo $licensestype->pkey ?>"><label>&nbsp;&nbsp;License</label>
+                </td>
+                <td>
+                    <input type="radio" required="required" doc_id="<?php echo $licensestype->pkey ?>" class="licensestype-edit" value="Certification" <?php if($licensestype->documentType=='Certification') echo 'checked="checked"'?> name="documentType" id="certificate_radio_<?php echo $licensestype->pkey ?>"><label>&nbsp;&nbsp;Certification</label>
+                </td>
+            </tr>
+            <tr>
+                <td width="200px"><label>File Name</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td colspan="2"><?php echo $escaper->escapeHtml($licensestype->filename);?></td>                
+            </tr>
+            <?php if($job->partner=='Adler'){ ?>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> license_radio_<?php echo $licensestype->pkey ?>" colspan="4" style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Licenses Type  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="licensestype" class="form-control-element" value="<?php echo $licensestype->licensestype ?>"/>                       
+                    </td>
+                </tr>
+            </table></td></tr>           
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> license_radio_<?php echo $licensestype->pkey ?>" colspan="4" style="display:none;"><table>
+                <tr>
+                    <td  width="200px"><label>State of Issuance </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="stateOfIssue" class="form-control-element" value="<?php echo $licensestype->stateOfIssue?>" required="required" />
+                    </td>
+                </tr>
+            </table></td></tr>    
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> certificate_radio_<?php echo $licensestype->pkey ?>" colspan="4"  style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Issuing Agency Name  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="issuingagency" class="form-control-element" value="<?php echo $licensestype->issuingagency ?>"/>                        
+                    </td>
+                </tr>
+            </table></td></tr> 
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> certificate_radio_<?php echo $licensestype->pkey ?>" colspan="4"  style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Type of Certification </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="certificationtype" class="form-control-element" value="<?php echo $licensestype->certificationtype ?>"/>                        
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr>
+                <td width="200px"><label>Does document expire? </label><label style="color: red;">&nbsp;*</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td colspan="2">
+                   <select name="S_Expiration" onchange="IsRequired(<?php echo $licensestype->pkey ?>,this.value)" class="form-control" required="required">
+                       <option value="">-Select-</option>
+                       <option value="1" <?php if($licensestype->S_Expiration==1) echo 'selected="selected"' ?>>Yes</option>
+                       <option value="0" <?php if($licensestype->S_Expiration==0) echo 'selected="selected"' ?>>No</option>
+                    </select>                       
+                </td>
+            </tr>
+            <?php } ?>
+            <?php if($job->partner=='Wilkes'){ ?>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> license_radio_<?php echo $licensestype->pkey ?>" colspan="4" style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Licenses Type  </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <?php if(count($licensestypelov)>0){?>
+                        <select name="LicensesTypeLOV_pkey" class="form-control-select" id="license_other_<?php echo $licensestype->pkey ?>">
+                            <?php foreach($licensestypelov as $key => $name) { ?>
+                            <?php        
+                            $selected = '';
+                            if($licensestype->LicensesTypeLOV_pkey==$key){
+                                $selected = 'selected="selected"';
+                            } 
+                            ?>
+                            <option value="<?php echo $key?>" <?php echo $selected?>><?php echo $name ?> </option>
+                            <?php } ?>
+                        </select>                       
+                        <?php } ?>
+                    </td>
+                </tr>
+            </table></td></tr> 
+            <?php if($licensestype->otherlicensestype == '') { $display = 'display:none;';} else { $display = ''; } ?>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> license_other_<?php echo $licensestype->pkey ?>" colspan="4" style="<?php echo $display;?>">
+                    <table style=" width:100%;">
+                <tr> 
+                    <td width="200px"><label>If other, please specify. </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="otherlicensestype" class="form-control-element" value="<?php echo $licensestype->otherlicensestype?>" />
+                    </td>
+                </tr>
+            </table></td></tr> 
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> license_radio_<?php echo $licensestype->pkey ?>" colspan="4" style="display:none;"><table>
+                <tr>
+                    <td  width="200px"><label>State of Issuance </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="stateOfIssue" class="form-control-element" value="<?php echo $licensestype->stateOfIssue?>" required="required" />
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> certificate_radio_<?php echo $licensestype->pkey ?>" colspan="4"  style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Issuing Agency Name </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <?php if(count($issuingagencylov)>0){ ?>
+                        <select name="IssuingAgencyLOV_pkey" class="form-control-select" id="issuing_agency_other<?php echo $licensestype->pkey ?>">                            
+                            <?php foreach($issuingagencylov as $key => $name) { ?>
+                            <?php     
+                            $selected = '';
+                            if($licensestype->IssuingAgencyLOV_pkey==$key){
+                                $selected = 'selected="selected"';
+                            } 
+                            ?>
+                            <option value="<?php echo $key?>" <?php echo $selected?> ><?php echo $name ?> </option>
+                            <?php } ?>
+                        </select>                       
+                        <?php } ?> 
+                    </td>
+                </tr>
+            </table></td></tr>
+            <?php if($licensestype->otherissuingagency == '') { $display = 'display:none;';} else { $display = ''; } ?>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> issuing_agency_other<?php echo $licensestype->pkey ?>" colspan="4" style="<?php echo $display;?>"><table>
+                <tr> 
+                    <td width="250px"><label>If other, please specify. </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="otherissuingagency" class="form-control-element" value="<?php echo $licensestype->otherissuingagency?>" />
+                    </td>
+                </tr>
+            </table></td></tr>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> certificate_radio_<?php echo $licensestype->pkey ?>" colspan="4"  style="display:none;"><table>
+                <tr>
+                    <td width="200px"><label>Type of Certification </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">                        
+                        <?php if(count($certificationtypelov)>0){?>                        
+                        <select name="CertificationTypeLOV_pkey" class="form-control-select" id="certificate_other<?php echo $licensestype->pkey ?>">
+                            <?php foreach($certificationtypelov as $key => $name) { ?>
+                            <?php     
+                            $selected = '';
+                            if($licensestype->CertificationTypeLOV_pkey==$key){
+                                $selected = 'selected="selected"';
+                            } 
+                            ?>
+                            <option value="<?php echo $key?>" <?php echo $selected?>><?php echo $name ?> </option>
+                            <?php } ?>
+                        </select>                       
+                        <?php } ?>                        
+                    </td>
+                </tr>
+            </table></td></tr>
+            <?php if($licensestype->othercertificationtype == '') { $display = 'display:none;';} else { $display = ''; } ?>
+            <tr><td class="open-license-<?php echo $licensestype->pkey ?> certificate_other<?php echo $licensestype->pkey ?>" colspan="4" style="<?php echo $display;?>"><table>
+                <tr> 
+                    <td width="200px"><label>If other, please specify. </label><label style="color: red;">&nbsp;*</label></td>
+                    <td>&nbsp;&nbsp;</td>
+                    <td colspan="2">
+                        <input type="text" name="othercertificationtype" class="form-control-element" value="<?php echo $licensestype->othercertificationtype?>" />
+                    </td>
+                </tr>
+            </table></td></tr>
+            <?php } ?>
+            <tr>
+                <td width="200px"><label>Expiration Date</label></td>
+                <td>&nbsp;&nbsp;</td>
+                <td colspan="2">
+                    <input type="text" <?php if($licensestype->S_Expiration==1) echo 'required="required"' ?> value="<?php echo $licensestype->expirationDate?>" name="expirationDate" class="form-control-element datepicker expi_date_<?php echo $licensestype->pkey ?>" />
+                </td>
+            </tr>
+            <tr><td colspan="4">&nbsp;</td></tr>
+            <tr>
+                <td colspan="4" style="text-align:right;"><input id="submit" type="submit" value="Submit" class="btn btn-large btn-primary"></td>
+            </tr>    
+        </table>
+        <input type="hidden" name="NewApplication_pkey" value="<?php echo $pkey;?>" />
+        <input type="hidden" name="pkey" value="<?php echo $licensestype->pkey;?>" />
+    </form> 
+</div>
+<?php endforeach;
+endif; 
+}
+?>
+
+<div id="course-add-dialog" title="Course Details" style="display: none;">
+    <form name="course_add_form" id="course_add_form" method="POST">         
+        <?php if(count($coursesList)>0) { ?>
+        <table class="table" id="table-popup-search" style="font-size:13px;width: 100% !important;">
+            <thead>
+                <tr class="panel panel-default">
+                    <th id="data-sorter-false">Add</th>
+                    <th>Degree Code</th>
+                    <th>Course Group Name</th>
+                    <th>Course Code</th>
+                    <th>Course Name</th>                                
+                </tr>
+            </thead>
+            <tbody>
+                <?php if(count($coursesList)>0) { ?>
+                    <?php foreach ($coursesList as $course): ?>
+                    <tr class="panel panel-default">
+                        <td><input type="checkbox" class="courses_add_check" name="courses_add_check[]" value="<?php echo $course->pkey;?>" /></td>
+                        <td><?php if($course->group_code!='') echo $course->group_code; else echo '-';?></td>
+                        <td><?php if($course->group_name!='') echo $course->group_name; else echo '-';?></td>
+                        <td><?php echo $course->code;?></td>                        
+                        <td><?php echo $course->name;?></td>                                    
+                    </tr>    
+                    <?php endforeach;?>
+                <?php } else {?>
+                    <tr class="panel panel-default"><td colspan="10">No records found.</td></tr>
+                <?php } ?>
+            </tbody>
+        </table>
+        <?php } ?>                    
+        <input type="hidden" name="Newapplication_pkey" value="<?php echo $applicant->pkey;?>" />         
+        <input type="hidden" name="PartyInfo_pkey" value="<?php echo $applicant->PartyInfo_pkey;?>" />
+        <input type="hidden" name="Partners_pkey" value="<?php echo $applicant->partners_key;?>" />
+    </form>
+</div>
+ 
+<div class="panel panel-default" >   
+    <?php
+    $form = $this->form;
+    $form->setAttribute('action', $this->url('applicants',array('action' => 'edit', 'pkey' => $this->pkey)));
+    $form->setAttribute("method", "POST");
+    $form->prepare();
+    echo $this->form()->openTag($form);
+    echo $this->formHidden($form->get('pkey'));        
+    ?> 
+    <table class="table-form">        
+        <tr>
+            <td><label>University</label></td><td><input type="text" class="form-control" readonly="readonly" value="<?php echo $job->partner?>" /></td>
+            <td><label>Job Name</label></td><td colspan="2"><input type="text" class="form-control" style="width:100%" readonly="readonly" value="<?php echo $job->job_name?>" /></td>                        
+        </tr>
+        <tr>
+            <td><?php echo $this->formLabel($form->get('S_AppSign')); ?></td>
+            <td><?php 
+            if($applicant->S_AppSign == '' && $applicant->applicationName != '')
+            { ?>
+            <input class="form-control" type="text" value="<?php echo $applicant->applicationName;?>" name="S_AppSign">
+            <?php }
+            else
+            {
+                echo $this->formText($form->get('S_AppSign'));
+            }
+            ?></td>
+            <td><?php echo $this->formLabel($form->get('S_AppDate')); ?></td>
+            <td><?php echo $this->formText($form->get('S_AppDate')); ?></td>
+            <td><?php echo $this->formRow($form->get('submit-form')); ?></td>
+        </tr>
+    </table>    
+</div> 
+<div id="tabs">
+    <ul>
+        <li><a href="#tabs-1">Profile</a></li>        
+        <li><a href="#tabs-2">Documents</a></li>
+        <li><a href="#tabs-3">Application</a></li>
+        <li><a href="#tabs-4">Courses Qualified</a></li>
+        <li><a href="#tabs-5">Change Application Status</a></li>
+        <li><a href="#tabs-6">Additional Information</a></li>
+        <li><a href="#tabs-7">Notes</a></li>
+        <li><a href="#tabs-8">Audit History</a></li>
+    </ul>
+    <div id="tabs-1">
+        <?php
+        $formFields = $form->_formFields;       
+        $final_form_fields = array();
+        //Add More Option Array
+        $add_more_array = array();
+        if(count($formFields)>0){
+            $form_keys = array_keys($formFields);
+            $last_array = end($formFields);
+            $last_position = $last_array['position'];        
+            $m = 0;
+            $val = 0;
+            for($i=1; $i<=$last_position;$i++){            
+                if ($m % 3 == 0) { 
+                    $val = $val+1;
+                }
+                if(isset($formFields[$i]['position']) && $i==$formFields[$i]['position']){
+                    $final_form_fields[$val][] = $formFields[$i];                
+                }
+                $m++;
+                //Add More Option Array
+                if(isset($formFields[$i]['add_more']) && $formFields[$i]['add_more']=='yes'){                
+                    $add_more_array[$formFields[$i]['section']][] = $formFields[$i]['column'];
+                }
+            }
+        }        
+        ?>
+        <div class="application-form">
+        <?php   
+        $html = '<div class="main-form-fields" >';
+        if(count($final_form_fields)>0){
+            //$html .= '<table class="appl-table-form" >'; 
+            //$j = 1;
+            foreach($final_form_fields as $j => $form_fields){
+                $column = count($form_fields);
+                $i = 1;            
+                $html .= '<table class="appl-table-form" >';
+                $html .= '<tr>';      
+                $percent = ceil( 100 / $column ) ;
+                foreach($form_fields as $field){
+                    $td_colspan = '';                 
+                    if($column==1) {
+                        $td_colspan = 'colspan="2"';
+                    }                
+                    if(isset($field['section_name'])){
+                        $html .= '<td colspan="6">';                                      
+                        if($field['section_visible']==1 && $field['section_name']!='Document Upload' && $field['section_name']!='Reporting Information' && $field['section_name']!='Race'){                    
+                            $html .= '<h4>'.$field['section_name'].'</h4>';
+                        }
+                        if(isset($field['section_desc']) && $field['section_desc']!='' && $field['section_name']!='Reporting Information' && $field['section_name']!='Race'){                    
+                           $html .= '<br/><div id='.$field['section_id'].' style='.$field['section_display'].'> '.$field['section_desc'].'</div>';
+                        }                                                   
+                        if (stristr($field['section_name'], 'line'))
+                        {
+                            $html .= '<hr>';
+                        }
+                        $html .= '</td></tr>';
+                    } else {   
+                        //Add More Class
+                        $add_class = '';
+                        $add_id = '';
+                        if($field['add_more']=='yes'){
+                            $section_name = str_replace(' ','-',$field['section']);
+                            $add_id = 'id="add_'.$section_name.'_'.$j.'"';
+                            $add_class = 'class="add_'.$section_name.'"';
+                        }
+
+                        $field_type = $field['type'];
+                        if($field['type']=='datefield') {
+                            $field_type = 'text';
+                        }    
+                        $type = 'form'.$field_type;   
+                        if($job->partner!='Concordia' && ($field['column']!='S_Gender' || $field['column']!='S_Ethnicity' || $field['column']!='S_Veteran' || $field['column']!='S_AmerIndAlaskNativ' || $field['column']!='S_Asian' || $field['column']!='S_BlackAfricAmer' || $field['column']!='S_NativHawaiiPacIsland' || $field['column']!='S_White')){ 
+                        if($column==2 && $field['type']=='select'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:30%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td style="" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==1 && $field['type']=='select'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td  valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="onecolumn_select" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if(($column==1 || $column==2 || $column==3) && ($field['type']=='checkbox')){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td class="radiolabel" valign="top">'.$this->$type($form->get($field['column'])).'&nbsp;&nbsp;'.$this->formLabel($form->get($field['column'])).'</td>';                            
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==1 && $field['type']=='radio'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:90%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="radiolabel" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==1 && $field['type']=='textarea'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td class="onecolumntextarea" style="width:90%;" valign="top" colspan="2">'.$this->formLabel($form->get($field['column'])).'<br>'.$this->$type($form->get($field['column'])).'</td>';                            
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if(($column==3 || $column==2) && $field['type']=='radio'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:30%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="radiolabel" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==2 && ($field['type']=='text' || $field['type']=='datefield' || $field['type']=='textarea')){
+                            if($i==1){
+                                $html .= '<td class="twocolumn_main_td1">';
+                                $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                                $html .= '<td class="twocolumn_main_td1_first" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                                $html .= '<td class="twocolumn" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                                $html .= '</tr></table>';
+                                $html .= '</td>';
+                            } else {
+                                $html .= '<td class="twocolumn_main_td2">';
+                                $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                                $html .= '<td class="twocolumn_main_td1_second" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                                $html .= '<td  valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                                $html .= '</tr></table>';
+                                $html .= '</td>';
+                            }
+                        } else if($column==1 && ($field['type']=='text' || $field['type']=='datefield')){
+                            $html .= '<td >';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td class="onecolumn_td1" valign="top" style="width:10%;”" >'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="onecolumn" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else {
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:30%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td  valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } 
+                        }
+                        else if($job->partner=='Concordia' && $field['column']!='S_Gender' && $field['column']!='S_Ethnicity' && $field['column']!='S_Veteran' && $field['column']!='S_AmerIndAlaskNativ' && $field['column']!='S_Asian' && $field['column']!='S_BlackAfricAmer' && $field['column']!='S_NativHawaiiPacIsland' && $field['column']!='S_White'){ 
+                        if($column==2 && $field['type']=='select'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:30%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td style="" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==1 && $field['type']=='select'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td  valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="onecolumn_select" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if(($column==1 || $column==2 || $column==3) && ($field['type']=='checkbox')){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td class="radiolabel" valign="top">'.$this->$type($form->get($field['column'])).'&nbsp;&nbsp;'.$this->formLabel($form->get($field['column'])).'</td>';                            
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==1 && $field['type']=='radio'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:90%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="radiolabel" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==1 && $field['type']=='textarea'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td class="onecolumntextarea" style="width:90%;" valign="top" colspan="2">'.$this->formLabel($form->get($field['column'])).'<br>'.$this->$type($form->get($field['column'])).'</td>';                            
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if(($column==3 || $column==2) && $field['type']=='radio'){
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:30%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="radiolabel" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else if($column==2 && ($field['type']=='text' || $field['type']=='datefield' || $field['type']=='textarea')){
+                            if($i==1){
+                                $html .= '<td class="twocolumn_main_td1">';
+                                $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                                $html .= '<td class="twocolumn_main_td1_first" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                                $html .= '<td class="twocolumn" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                                $html .= '</tr></table>';
+                                $html .= '</td>';
+                            } else {
+                                $html .= '<td class="twocolumn_main_td2">';
+                                $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                                $html .= '<td class="twocolumn_main_td1_second" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                                $html .= '<td  valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                                $html .= '</tr></table>';
+                                $html .= '</td>';
+                            }
+                        } else if($column==1 && ($field['type']=='text' || $field['type']=='datefield')){
+                            $html .= '<td >';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td class="onecolumn_td1" valign="top" style="width:10%;”" >'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td class="onecolumn" valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } else {
+                            $html .= '<td style="width:'.$percent.'%;">';
+                            $html .= '<table border="0" width="100%" '.$add_class.' '.$add_id.'><tr>';
+                            $html .= '<td style="width:30%;" valign="top">'.$this->formLabel($form->get($field['column'])).'</td>';
+                            $html .= '<td  valign="top">'.$this->$type($form->get($field['column'])). '</td>';       
+                            $html .= '</tr></table>';
+                            $html .= '</td>';
+                        } 
+                        }
+                    }
+                    $i++;        
+                    //Check for Social Security
+                    if(isset($field['column']) && $field['column']=='S_SocialSecurityNo'){
+                        $html .= '<input type="hidden" name="SocialSecurityNo1" value="" />';
+                    }
+                }
+                $html .= '</tr>';
+                $html .= '</table>';
+                
+                //Add More Option -- Static
+                if(isset($field['column']) && $field['column']=='S_Minor[]'){                     
+                    $add_count = $multiple_column_array['S_Minor[]']['count'];
+                    for($more=1; $more<=$add_count; $more++){
+
+                        $class_add = 'add_collegeInfo_append_'.$more;   
+                        $radio_value = $multiple_column_array['S_IscollegeGraduate[]']['values'][$more];
+                        $radio_name = 'S_IscollegeGraduate['.$more.']';
+                        $radio_class = 'display:none';
+                        if($radio_value=='N'){
+                            $radio_class = 'display:inline-block';
+                        }
+                        $html .= '<div class="'.$class_add.'" border="0" width="100%" style="border-top:2px solid #EFEFEF;padding:2% 0px 2% 0px;">';
+                        $html .= '<table class="appl-table-form">
+                            <tr>
+                                <td valign="top" class="onecolumn_td1">'.$this->formLabel($form->get('S_College1[]')).'</td>
+                                <td valign="top" class="onecolumn">'.$this->formText($form->get('S_College1[]')->setName('S_College1['.$more.']')->setValue($multiple_column_array['S_College1[]']['values'][$more])).'</td>           
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>            
+                                <td class="twocolumn_main_td1">
+                                    <table border="0" width="100%">
+                                        <tr>
+                                            <td valign="top" class="twocolumn_main_td1_first">'.$this->formLabel($form->get('S_CollegeAddress1[]')).'</td>
+                                            <td valign="top" class="twocolumn">'.$this->formText($form->get('S_CollegeAddress1[]')->setName('S_CollegeAddress1['.$more.']')->setValue($multiple_column_array['S_CollegeAddress1[]']['values'][$more])).'</td>  
+                                        </tr>
+                                    </table>
+                                </td>                        
+                                <td class="twocolumn_main_td2">
+                                    <table border="0" width="100%">
+                                        <tr>
+                                            <td valign="top" class="twocolumn_main_td1_second">'.$this->formLabel($form->get('S_CollegeTelephoneNo1[]')).'</td>
+                                            <td valign="top">'.$this->formText($form->get('S_CollegeTelephoneNo1[]')->setName('S_CollegeTelephoneNo1['.$more.']')->setValue($multiple_column_array['S_CollegeTelephoneNo1[]']['values'][$more])).'</td>
+                                        </tr>
+                                    </table>
+                                </td>            
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_IscollegeGraduate[]')).'</td>
+                                        <td valign="top" class="radiolabel">
+                                            <label style=""><input type="radio" value="Y" '.(($radio_value == 'Y')? ' checked="checked"' : '').' style="" required="required" onchange="loadcollegeGradRadio(this.value,\''.$more.'\')" name="'.$radio_name.'">     Yes</label>
+                                            <label style=""><input type="radio" value="N" '.(($radio_value == 'N')? ' checked="checked"' : '').' style="" required="required" onchange="loadcollegeGradRadio(this.value,\''.$more.'\')" name="'.$radio_name.'">     No</label>                    
+                                        </td>                                    
+                                    </tr>          
+                                </table></td> ';
+                                //if($radio_value=='N'):
+                                $html .='<td style="width:34%;"><table border="0" width="100%" class="loadCollegeGradRadio" style="'.$radio_class.'">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_GradePointAvg[]')->setName('S_GradePointAvg['.$more.']')->setOptions(array('label_attributes'=>array('style'=>$radio_class)))).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_GradePointAvg[]')->setName('S_GradePointAvg['.$more.']')->setAttributes(array('style'=>$radio_class))->setValue($multiple_column_array['S_GradePointAvg[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                <td style="width:34%;"><table border="0" width="100%" class="loadCollegeGradRadio" style="'.$radio_class.'">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_NoOfHours[]')->setName('S_NoOfHours['.$more.']')->setOptions(array('label_attributes'=>array('style'=>$radio_class)))).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_NoOfHours[]')->setName('S_NoOfHours['.$more.']')->setAttributes(array('style'=>$radio_class))->setValue($multiple_column_array['S_NoOfHours[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>';
+                                //endif;
+                            $html .='</tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>            
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_DegreeListEnum_pkey[]')).'</td>
+                                        <td valign="top" >'.$this->formSelect($form->get('S_DegreeListEnum_pkey[]')->setName('S_DegreeListEnum_pkey['.$more.']')->setValue($multiple_column_array['S_DegreeListEnum_pkey[]']['values'][$more])).'</td>
+                                    </tr>          
+                                </table></td>                         
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_DegreeOther[]')).'</td>
+                                        <td valign="top" >'.$this->formText($form->get('S_DegreeOther[]')->setName('S_DegreeOther['.$more.']')->setValue($multiple_column_array['S_DegreeOther[]']['values'][$more])).'</td>
+                                    </tr>          
+                                </table></td>             
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>            
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_MajorListEnum_pkey[]')).'</td>
+                                        <td valign="top" >'.$this->formSelect($form->get('S_MajorListEnum_pkey[]')->setName('S_MajorListEnum_pkey['.$more.']')->setValue($multiple_column_array['S_MajorListEnum_pkey[]']['values'][$more])).'</td>
+                                    </tr>          
+                                </table></td> 
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_MajorOther[]')).'</td>
+                                        <td valign="top" >'.$this->formText($form->get('S_MajorOther[]')->setName('S_MajorOther['.$more.']')->setValue($multiple_column_array['S_MajorOther[]']['values'][$more])).'</td>
+                                    </tr>          
+                                </table></td>             
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td class="onecolumn_td1" valign="top">'.$this->formLabel($form->get('S_Minor[]')).'</td>
+                                <td class="onecolumn" valign="top" >'.$this->formText($form->get('S_Minor[]')->setName('S_Minor['.$more.']')->setValue($multiple_column_array['S_Minor[]']['values'][$more])).'</td>        
+                            </tr>
+                        </table>';                        
+                        $html .= '</div>';
+                    }
+                }
+                $kk = ($j+2); 
+                if(isset($final_form_fields[$kk][0]['column']) && $final_form_fields[$kk][0]['column']=='S_MayContactEmp'){                                      
+                    $add_count = $multiple_column_array['S_Empl1[]']['count'];                 
+                    for($more=1; $more<=$add_count; $more++){                    
+                        $class_add = 'add_employerInfo_append_'.$more;   
+                        $radio_value = $multiple_column_array['S_CurrentEmployer1[]']['values'][$more];
+                        $radio_name = 'S_CurrentEmployer1['.$more.']';
+                        $radio_class = 'display:none';
+
+                        if($radio_value=='N'){
+                            $radio_class = 'display:inline-block';
+                        }   
+                        $html .= '<div class="'.$class_add.'" border="0" width="100%" style="border-top:2px solid #EFEFEF;padding:2% 0px 2% 0px;">';
+                        $html .= '<table class="appl-table-form">
+                            <tr>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_Empl1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_Empl1[]')->setName('S_Empl1['.$more.']')->setValue($multiple_column_array['S_Empl1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                 <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_EmplAdd1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_EmplAdd1[]')->setName('S_EmplAdd1['.$more.']')->setValue($multiple_column_array['S_EmplAdd1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                 <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_EmplTele1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_EmplTele1[]')->setName('S_EmplTele1['.$more.']')->setValue($multiple_column_array['S_EmplTele1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_EmplBuss1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_EmplBuss1[]')->setName('S_EmplBuss1['.$more.']')->setValue($multiple_column_array['S_EmplBuss1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                 <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_Position1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_Position1[]')->setName('S_Position1['.$more.']')->setValue($multiple_column_array['S_Position1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                 <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_Salary1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_Salary1[]')->setName('S_Salary1['.$more.']')->setValue($multiple_column_array['S_Salary1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_ImmedSupervisor1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_ImmedSupervisor1[]')->setName('S_ImmedSupervisor1['.$more.']')->setValue($multiple_column_array['S_ImmedSupervisor1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                <td colspan="6">&nbsp;</td>            
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_CurrentEmployer1[]')).'</td>
+                                        <td valign="top" class="radiolabel">
+                                            <label style=""><input type="radio" value="Y" '.(($radio_value == 'Y')? ' checked="checked"' : '').' style="" required="required" onchange="loademployerRadio(this.value,\''.$more.'\')" name="'.$radio_name.'">     Yes</label>
+                                            <label style=""><input type="radio" value="N" '.(($radio_value == 'N')? ' checked="checked"' : '').' style="" required="required" onchange="loademployerRadio(this.value,\''.$more.'\')" name="'.$radio_name.'">     No</label>                    
+                                        </td>                                       
+                                    </tr>
+                                </table></td>
+                                <td style="width:34%;"><table border="0" width="100%" class="loadEmployerRadio" style="'.$radio_class.'">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_ReasonLeaving1[]')->setName('S_ReasonLeaving1['.$more.']')->setOptions(array('label_attributes'=>array('style'=>$radio_class)))).'</td>
+                                        <td valign="top">'.$this->formSelect($form->get('S_ReasonLeaving1[]')->setName('S_ReasonLeaving1['.$more.']')->setAttributes(array('style'=>$radio_class))->setValue($multiple_column_array['S_ReasonLeaving1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>  
+                                <td style="width:34%;"><table border="0" width="100%" class="loadEmployerRadio" style="'.$radio_class.'">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_OtherReasonLeaving1[]')->setName('S_OtherReasonLeaving1['.$more.']')->setOptions(array('label_attributes'=>array('style'=>$radio_class)))).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_OtherReasonLeaving1[]')->setName('S_OtherReasonLeaving1['.$more.']')->setAttributes(array('style'=>$radio_class))->setValue($multiple_column_array['S_OtherReasonLeaving1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>            
+                            </tr>
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td colspan="6"><br> Dates Employed (if currently employed, enter todays date for end date).</td>
+                            </tr>    
+                        </table>
+                        <table class="appl-table-form">
+                            <tr>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_StartDate1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_StartDate1[]')->setName('S_StartDate1['.$more.']')->setValue($multiple_column_array['S_StartDate1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                <td style="width:34%;"><table border="0" width="100%">
+                                    <tr>
+                                        <td valign="top" style="width:30%;">'.$this->formLabel($form->get('S_EndDate1[]')).'</td>
+                                        <td valign="top">'.$this->formText($form->get('S_EndDate1[]')->setName('S_EndDate1['.$more.']')->setValue($multiple_column_array['S_EndDate1[]']['values'][$more])).'</td>
+                                    </tr>
+                                </table></td>
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+                        </table>';                        
+                        $html .= '</div>';
+                    }
+                }          
+                $j++;            
+            }        
+        }    
+        $html .= '</div>'; 
+        echo $html;
+        ?>
+        <div class="form-bottom">                
+            <?php echo $this->formRow($form->get('submit-form')); ?>
+            <a style="color:#FFF;font-size:14px;" href="<?php echo $this->url('applicants',array('action'=>'generatePDF','pkey'=>$pkey))?>" class="btn btn-large btn-primary">Generate PDF</a>
+        </div>
+        <?php
+        echo $this->formHidden($form->get('pkey'));
+        echo $this->formHidden($form->get('JobListing_pkey'));
+        echo $this->formHidden($form->get('PartyInfo_pkey'));
+        //echo $this->formHidden($form->get('email'));
+        echo $this->formHidden($form->get('InstructorTypeLOV_pkey'));
+        echo $this->formHidden($form->get('AppStatusLOV_pkey'));
+        echo $this->form()->closeTag();    
+        ?>
+        </div>
+    </div>    
+    <!-- Documents -->    
+    <div id="tabs-2"> 
+        <div id="files" class="files"></div>  
+        <h5>If you would like to upload a new Curriculum Vitae, please select a new file for uploading. (only .doc or .pdf or Image files)</h5>
+        <table class="table-form-doc">
+            <tbody>
+                <tr>
+                    <td class="doc-main-title"><table style="position: relative;width: 100%">
+                        <thead><tr>
+                        <th class="chkbox-box">
+                            <?php if(isset($documents['CV / Resume'])){ ?>
+                            <input type="checkbox" class="check-doc-all" text="cv_check" name="selectAll" value=""/>
+                            <?php } ?>
+                        </th>       
+                        <th class="title-box">
+                            <span>Curriculam Vitae</span>
+                            <form id="fileupload" action="<?php echo $this->url('applicants',array('action'=>'uploadFile'));?>" method="POST" enctype="multipart/form-data">
+                                <span class="btn btn-large btn-primary fileinput-button">                
+                                    <span>Add</span>
+                                    <input type="file" name="files" >                
+                                </span>
+                                <input type="hidden" name="pkey" value="<?php echo $pkey;?>" />
+                                <input type="hidden" name="file_type" value="cv" />
+                            </form>
+                        </th>
+                        </tr></thead>
+                        <tbody>
+                            <?php 
+                            if(count($documents)>0)
+                            {
+                                if(isset($documents['CV / Resume'])){
+                                    foreach($documents['CV / Resume'] as $doc){
+                                        $download_url = $this->url('applicants', array('action'=>'download','pkey'=>$doc->pkey));
+                                        echo '<tr><td class="chkbox-box"><input type="checkbox" class="docs_check" name="cv_check[]" value="'.$doc->pkey.'" /></td><td class="title-box"><a href="'.$download_url.'">'.$doc->docName.'</a></td></tr>';
+                                    }
+                                }
+                                else
+                                {
+                                   echo '<tr><td colspan="2" class="title-box">No records found.</td></tr>'; 
+                                } 
+                            }
+                            else
+                            {
+                               echo '<tr><td colspan="2" class="title-box">No records found.</td></tr>'; 
+                            }    
+                            ?>
+                        </tbody>
+                    </table></td>
+                    <td class="doc-main-title"><table style="position: relative;width: 100%">
+                        <thead><tr>
+                        <th class="chkbox-box">
+                            <?php if(isset($documents['Licenses'])){ ?>
+                            <input type="checkbox" class="check-doc-all" text="license_check" name="selectAll" value=""/>
+                            <?php } ?>
+                            </th>
+                        <th class="title-box">                        
+                            <span>License</span>
+                            <form id="fileupload2" action="<?php echo $this->url('applicants',array('action'=>'uploadFile'));?>" method="POST" enctype="multipart/form-data">             
+                                <span class="btn btn-large btn-primary fileinput-button">                
+                                    <span>Add</span>
+                                    <input type="file" name="files" >                
+                                </span>            
+                                <input type="hidden" name="pkey" value="<?php echo $pkey;?>" />
+                                <input type="hidden" name="file_type" value="license" />
+                            </form>
+                        </th>
+                        </tr></thead>
+                        <tbody>
+                            <?php 
+                            if(count($documents)>0)
+                            {
+                                if(isset($documents['Licenses'])){
+                                    foreach($documents['Licenses'] as $doc){                                        
+                                        $download_url = $this->url('applicants', array('action'=>'download','pkey'=>$doc->pkey));
+                                        echo '<tr><td class="chkbox-box"><input type="checkbox" class="docs_check" name="license_check[]" value="'.$doc->pkey.'" /><td class="title-box"><a href="'.$download_url.'">'.$doc->docName.'</a></td></tr>';
+                                    }
+                                }
+                                else
+                                {
+                                   echo '<tr><td colspan="2" class="title-box">No records found.</td></tr>'; 
+                                } 
+                            }
+                            else
+                            {
+                               echo '<tr><td colspan="2" class="title-box">No records found.</td></tr>'; 
+                            }    
+                            ?>
+                        </tbody>
+                    </table></td>
+                    <td class="doc-main-title"><table style="position: relative;width: 100%">
+                        <thead><tr>
+                        <th class="chkbox-box">
+                            <?php if(isset($documents['Transcripts'])){ ?>
+                            <input type="checkbox" class="check-doc-all" text="transcripts_check" name="selectAll" value=""/>
+                            <?php } ?>
+                            </th>
+                        <th class="title-box">
+                            <span>Transcripts/Others</span>
+                            <form id="fileupload3" action="<?php echo $this->url('applicants',array('action'=>'uploadFile'));?>" method="POST" enctype="multipart/form-data">             
+                                <span class="btn btn-large btn-primary fileinput-button">                
+                                    <span>Add</span>
+                                    <input type="file" name="files" >                
+                                </span>            
+                                <input type="hidden" name="pkey" value="<?php echo $pkey;?>" />
+                                <input type="hidden" name="file_type" value="transcripts" />
+                            </form>
+                        </th>
+                        </tr></thead>
+                        <tbody>
+                            <?php 
+                            if(count($documents)>0)
+                            {
+                                if(isset($documents['Transcripts'])){
+                                    foreach($documents['Transcripts'] as $doc){
+                                        $download_url = $this->url('applicants', array('action'=>'download','pkey'=>$doc->pkey));
+                                        echo '<tr><td class="chkbox-box"><input type="checkbox" class="docs_check" name="transcripts_check[]" value="'.$doc->pkey.'" /><td class="title-box"><a href="'.$download_url.'">'.$doc->docName.'</a></td></tr>';
+                                    }
+                                }
+                                else
+                                {
+                                   echo '<tr><td colspan="2" class="title-box">No records found.</td></tr>'; 
+                                } 
+                            }
+                            else
+                            {
+                               echo '<tr><td colspan="2" class="title-box">No records found.</td></tr>'; 
+                            }    
+                            ?>
+                        </tbody>
+                    </table></td>
+                </tr>
+            </tbody>
+        </table>  
+        <div class="docs-remove"><a href="#" onclick="removeDocs();return false;" class="btn btn-large btn-primary">Remove</a></div>
+        <?php //licensestypeapp list
+        if($job->partner=='Adler' || $job->partner=='Wilkes'){
+        if(count($licensestypeapp)>0){
+        ?>    
+         <table class="table-doc-licensestypeapp"> 
+            <tr><td colspan="8" class="title-heading">License / Certification - <b style="font-style:italic;color:red;">Please click on file name to edit license details.</b></td></tr>
+            <tr>
+                <td class="title-box-heading">Document Type</td>
+                <td class="title-box-heading">File Name</td>
+                <td class="title-box-heading">Does document expire?</td>
+                <td class="title-box-heading">Expiration Date</td>
+                <td class="title-box-heading">State of Issuance</td>
+                <td class="title-box-heading">Licenses Type</td>
+                <td class="title-box-heading">Issuing Agency Name</td>
+                <td class="title-box-heading">Type of Certification</td>
+            </tr>
+            <?php foreach($licensestypeapp as $licensestype){ ?>
+            <tr>
+            <td class="title-box"><?php echo $licensestype->documentType ?></td>
+            <td class="title-box"><a href="#" class="editLicenseDoc" id="<?php echo $licensestype->pkey?>"><?php echo $licensestype->filename?></a></td>
+            <td class="title-box">
+                <?php
+                if($licensestype->S_Expiration==1){
+                    echo 'Yes';
+                } else {
+                    echo 'No';
+                }                
+                ?>
+            </td>
+            <td class="title-box">
+                <?php 
+                if(!empty($licensestype->expirationDate)){
+                    echo date('m/d/Y',  strtotime($licensestype->expirationDate)) ;
+                } else {
+                    echo '-';
+                }            
+                ?>
+            </td>
+            <td class="title-box"><?php echo $licensestype->stateOfIssue ?></td>
+            <?php if($job->partner=='Adler'){ ?>
+            <td class="title-box"><?php echo $licensestype->licensestype ?></td>
+            <td class="title-box"><?php echo $licensestype->issuingagency ?></td>
+            <td class="title-box"><?php echo $licensestype->certificationtype ?></td>    
+            <?php } ?>
+            <?php if($job->partner=='Wilkes'){ ?>
+            <td class="title-box"><?php echo $licensestype->license_type ?></td>
+            <td class="title-box"><?php echo $licensestype->issue_type ?></td>
+            <td class="title-box"><?php echo $licensestype->certificate_type ?></td>    
+            <?php } ?>
+            
+            </tr>
+           <?php } ?>
+        </table>
+        <?php }         
+        }?>
+    </div>
+    <!-- Applications -->
+    <div id="tabs-3">        
+        <table class="table" style="font-size:14px;">
+            <thead>
+                <tr class="panel panel-default">
+                    <th>Generated Application(s)</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php 
+                if(count($documents)>0)
+                {
+                    if(isset($documents['Generated PDF'])){
+                        foreach($documents['Generated PDF'] as $doc){
+                            $download_url = $this->url('applicants', array('action'=>'download','pkey'=>$doc->pkey));
+                            echo '<tr class="panel panel-default"><td><a href="'.$download_url.'">'.$doc->docName.'</a></td><td>'.date('m/d/Y',strtotime($doc->submittedOn)).' '.date('g:i A',strtotime($doc->time)).'</td></tr>';
+                        }
+                    }
+                    else
+                    {
+                       echo '<tr class="panel panel-default"><td>No records found.</td></tr>'; 
+                    } 
+                }
+                else
+                {
+                   echo '<tr class="panel panel-default"><td>No records found.</td></tr>'; 
+                }    
+            ?>
+            </tbody>                        
+        </table>
+    </div>
+    <!-- Course Qualified -->
+    <div id="tabs-4">
+        <div class="add_course">
+            <a href="#" class="btn btn-small btn-primary" onclick="addQualifiedCourse('<?php echo $pkey;?>');return false;">Add Course</a>
+            <a href="#" onclick="removeCourses();return false;" class="btn btn-large btn-primary">Remove Course</a>
+            <a href="#" onclick="candidateApproved();return false;" class="btn btn-large btn-primary">Save</a>
+        </div>        
+        <div class="panel panel-default">
+            <div class="panel-heading">     
+                <?php echo $this->translate('Results: ') ?><?php echo $this->escapeHtml(count($coursesQualified));?>
+                <?php if(count($coursesQualified)>0): ?>
+                <div class="export-options">						
+                    <span>&nbsp;<a id="exportCourse" href="<?php echo $this->url('applicants', array('action' => 'exportCourse', 'pkey' => $pkey))?>">Export</a></span>                
+                </div>
+                <?php endif; ?>
+            </div>
+            <table class="table <?php if(count($coursesQualified)>0): echo 'pagination-table'; endif;?>" style="font-size:14px;width:100% !important;">
+                <thead>
+                    <tr class="panel panel-default">
+                        <td id="data-sorter-false">Remove</td>
+                        <td>Degree Code</td>
+                        <td>Course Group Name</td>
+                        <td>Course Code</th>
+                        <td>Course Name</th>
+                        <td>Description</td>
+                        <td id="data-sorter-false">Candidate Approved</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if(count($coursesQualified)>0) { ?>
+                        <?php foreach ($coursesQualified as $course): ?>
+                        <tr class="panel panel-default">
+                            <td><input type="checkbox" class="courses_remove_check" name="courses_remove_check[]" value="<?php echo $course->partyinfo_id;?>" /></td>
+                            <td><?php if($course->group_code!='') echo $course->group_code; else echo '-';?></td>
+                            <td><?php if($course->group_name!='') echo $course->group_name; else echo '-';?></td>
+                            <td><?php echo $course->code;?></td>                        
+                            <td class="table-limit"><?php echo $course->name;?></td>
+                            <td class="table-limit" style="max-width:180px !important;"><?php echo $course->description;?></td>
+                            <?php 
+                            $checked = '';
+                            if($course->is_approved==1) $checked = 'checked="checked"'; 
+                            ?>
+                            <td style="text-align:center;"><input type="checkbox" <?php echo $checked?> name="is_approved[]" value="<?php echo $course->partyinfo_id;?>" /></td>
+                        </tr>    
+                        <?php endforeach;?>
+                    <?php } else {?>
+                        <tr class="panel panel-default"><td colspan="10">No records found.</td></tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>    
+    </div>
+    <!-- Change Application Status -->
+    <div id="tabs-5">
+        <div id="status-tab">
+            <ul>
+                <li><a href="#status-1">Status Change</a></li>                    
+                <li><a href="#status-2">Status Change History</a></li>
+            </ul>
+            <div id="status-1">
+                <form id="appStatus" action="<?php echo $this->url('applicants',array('action'=>'changeAppStatus'))?>" method="POST" style="display:inline-block;width:45%;">
+                    <table class="table-form">
+                        <tr>
+                            <td>Current Status</td>
+                            <td>
+                                <input type="text" class="form-control" readonly="readonly" value="<?php echo $currentStatus['current_status'];?>" />
+                                <input type="hidden" name="fromStatus_pkey" value="<?php echo $currentStatus['AppStatusLOV_pkey'];?>" />
+                            </td>
+                            <td>
+                                <input type="submit" name="changeappStatus" value="Change" class="btn btn-large btn-primary" />
+                            </td>
+                        </tr>                        
+                        <tr>
+                            <?php if(count($appStatusList)>0) {?>
+                            <td>Change To</td>
+                            <td>
+                                <select required name="toStatus_pkey" class="form-control">                            
+                                <?php foreach ($appStatusList as $key => $name): ?>
+                                    <option value="<?php echo $key?>"><?php echo $name?></option>
+                                <?php endforeach; ?>
+                                </select>    
+                                <?php } ?>
+                            </td>    
+                        </tr>
+                        <tr>
+                            <td>Notes</td>
+                            <td colspan="2"><textarea class="form-control" name="Notes"></textarea></td>
+                        </tr>                          
+                    </table>           
+                    <input type="hidden" name="partyInfo_pkey" value="<?php echo $applicant->PartyInfo_pkey;?>" />
+                    <input type="hidden" name="newApplication_pkey" value="<?php echo $pkey?>" />
+                </form>
+                <form id="appStatusEmail" action="<?php echo $this->url('applicants',array('action'=>'sendStatusChangeEmail'))?>" method="POST" style="display:inline-block;width: 30%;vertical-align: top;">
+                    <table class="table-form">
+                        <tr>                            
+                            <td>
+                                <input type="submit" name="emailappStatus" value="Send Email" class="btn btn-large btn-primary" />
+                            </td>
+                        </tr>     
+                    </table>   
+                    <input type="hidden" name="partyInfo_pkey" value="<?php echo $applicant->PartyInfo_pkey;?>" />
+                    <input type="hidden" name="newApplication_pkey" value="<?php echo $pkey?>" />
+                </form>    
+            </div>
+            <div id="status-2">
+                <div class="panel panel-default">
+                    <table class="table <?php if(count($appStatus)>0): echo 'pagination-table'; endif;?>" style="font-size:14px;width:100% !important;">
+                        <thead>
+                            <tr class="panel panel-default">
+                                <td width="180px">Date of Change</td>
+                                <td width="180px">Changed from</td>
+                                <td width="180px">Changed To</td>
+                                <td width="120px">Changed By - User Name</td>
+                                <td>Notes</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(count($appStatus)>0) { ?>
+                                <?php foreach ($appStatus as $status): ?>
+                                <tr class="panel panel-default">
+                                    <td><?php echo date('m/d/Y g:i A',  strtotime($status->dateOfChange));?></td>
+                                    <td><?php echo $status->from_status;?></td>                        
+                                    <td><?php echo $status->to_status;?></td>
+                                    <td><?php echo $status->firstName.' '.$status->lastName;?></td>
+                                    <td class="table-limit"><?php echo $status->Notes;?></td>
+                                </tr>    
+                                <?php endforeach;?>
+                            <?php } else {?>
+                                <tr class="panel panel-default"><td colspan="10">No records found.</td></tr>
+                            <?php } ?>
+                        </tbody>
+                    </table>
+                </div>    
+            </div>
+        </div>    
+    </div>    
+    <!-- Additional Information-->
+    <div id="tabs-6">        
+        <form id="add-info-form" name="add-info-form" action="<?php echo $this->url('applicants',array('action'=>'editAdditional','pkey'=>$pkey))?>" method="POST">
+            <table class="table-form">
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_university')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_university')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_profit_nonprofit')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_profit_nonprofit')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_highest_degree')); ?></td>
+                    <td><?php echo $this->formTextarea($form->get('additional_highest_degree')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_payrate')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_payrate')); ?></td>
+                </tr>                
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_university_email')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_university_email')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_education_exp')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_education_exp')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_online_exp')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_online_exp')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_start_date')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_start_date')); ?></td>
+                </tr>
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('additional_job_type')); ?></td>
+                    <td><?php echo $this->formText($form->get('additional_job_type')); ?></td>
+                </tr>
+                <tr> 
+                    <td colspan="2"><?php echo $this->formRow($form->get('submit-additional')); ?></td>
+                </tr>    
+            </table>     
+            <?php echo $this->formHidden($form->get('pkey')); ?>
+        </form>    
+    </div>
+    <!-- Notes -->
+    <div id="tabs-7">
+        <form id="notes-form" name="notes-form" action="<?php echo $this->url('applicants',array('action'=>'editNotes','pkey'=>$pkey))?>" method="POST">
+            <table class="table-form">
+                <tr>                 
+                    <td class="title"><?php echo $this->formLabel($form->get('notes')); ?></td>
+                    <td><?php echo $this->formTextarea($form->get('notes')); ?></td>
+                </tr>
+                <tr> 
+                    <td colspan="2"><?php echo $this->formRow($form->get('submit-notes')); ?></td>
+                </tr>
+            </table>   
+            <?php echo $this->formHidden($form->get('pkey')); ?>
+        </form>
+    </div> 
+    <!-- Audit History -->
+    <div id="tabs-8">        
+        <div class="panel panel-default">
+            <table class="table <?php if(count($auditHistory)>0): echo 'pagination-table-audit'; endif;?>" style="font-size:14px;width:100% !important;">
+                <thead>
+                    <tr class="panel panel-default">                                                
+                        <td>Date</td>
+                        <td>Time</td>
+                        <td>Business Event</td>
+                        <td>From</td>
+                        <td>To</td>                        
+                        <td>User</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if(count($auditHistory)>0) { ?>
+                        <?php foreach ($auditHistory as $audit): ?>
+                        <tr class="panel panel-default">                                                        
+                            <td><?php echo date('m/d/Y',  strtotime($audit->date));?></td>
+                            <td><?php echo date('g:i A', strtotime($audit->time));?></td>
+                            <td class="table-limit"><?php echo $audit->business_event;?></td>
+                            <td class="table-limit">
+                            <?php 
+                                if(!empty($audit->fromValue)): 
+                                    echo $audit->fromValue;
+                                else:
+                                    echo '-';
+                                endif;
+                            ?>
+                            </td>
+                            <td class="table-limit">
+                            <?php 
+                                if(!empty($audit->toValue)): 
+                                    echo $audit->toValue;
+                                else:
+                                    echo '-';
+                                endif;
+                            ?>
+                            </td>
+                            <td><?php echo $audit->user;?></td>                        
+                        </tr>    
+                        <?php endforeach;?>
+                    <?php } else {?>
+                        <tr class="panel panel-default"><td colspan="10">No records found.</td></tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $(".search-option").multiselect().multiselectfilter();
+</script>

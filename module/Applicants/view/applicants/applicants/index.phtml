@@ -1,0 +1,408 @@
+<?php
+/* 
+ * Applicants - Index View 
+ */
+$title = 'Applicants - ';
+$this->headTitle($title); 
+
+$url="http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+$param = parse_url($url);
+$paramArr = explode('/',$param['path']);
+$controllerName = $paramArr[1];
+$actionName = $paramArr[2];
+$statusName = $paramArr[3];
+?>
+<script>
+    $(document).ready(function(){                      
+        $("input[name='application_from_date'], input[name='application_to_date']").datepicker({
+             dateFormat: 'mm/dd/yy',
+             changeMonth: true,
+             changeYear: true             
+        });
+        $("input[name='application_from_date']").change(function () {
+            var date = $("input[name='application_from_date']").datepicker('getDate');
+            var date2 = $("input[name='application_from_date']").datepicker('getDate', '+1d'); 
+            date2.setDate(date2.getDate()+1); 
+            $("input[name='application_to_date']").datepicker('setDate', date2);
+            $("input[name='application_to_date']").datepicker("option", "minDate", date);
+        });
+        var date = $("input[name='application_from_date']").val();        
+        if(date!='')
+        {
+            var date = $("input[name='application_from_date']").datepicker('getDate');
+            $("input[name='application_to_date']").datepicker("option", "minDate", date);
+        }    
+        
+        $("input[name='search-submit']").click(function(){                
+            $('form[name=applicants]').submit();            
+        });
+        $("input[name='load_filter']").click(function(){    
+            $("input[name='filter_type']").val('load-filter');
+            $('form[name=available_filter_form]').submit();            
+        });
+        $("input[name='clear_filter']").click(function(){    
+            $("input[name='filter_type']").val('clear-filter');
+            $('form[name=applicants]').submit();            
+        });
+
+        var dialog = $("#delete-filter-dialog").dialog({
+            autoOpen: false,
+            height: 200,
+            width: 380,
+            modal: true,
+            buttons: {       
+                "Delete":  deleteFilter, 
+                Cancel: function() {
+                  dialog.dialog( "close" );
+                }
+            },
+        });
+        $( "input[name='delete_filter']" ).on( "click", function() {
+            dialog.dialog( "open" );
+        });  
+        function deleteFilter()
+        {   
+            var count = $("select[name='delete_availabe_filter[]'] :selected").length;
+            if(count>0)
+            {    
+                dialog.dialog( "close" );
+                var form_input_data = $("form#delete_filter_form").serialize();
+                $.ajax({
+                    url: "<?php echo $this->url('applicants',array('action'=>'deleteFilterApplicant'))?>",
+                    type: 'POST',                    
+                    data: form_input_data,                 
+                    success: function(response) {
+                        alert(response);
+                    },         
+                    complete: function(){
+                        window.location = "<?php echo $this->url('applicants',array('action'=>'index'))?>";
+                    }
+                });
+            }    
+            else
+            {
+                alert("please select filter to delete");
+            }
+        }   
+        //Search Term Functionality        
+        $("#search-term").on('change paste ', function() {
+            var search_term = $(this).val();                        
+            var url_redirect = location.protocol + '//' + location.host + location.pathname;
+            if(search_term!=''){                
+                var redirect_url = url_redirect+'?search='+encodeURIComponent(search_term);
+                window.location.href = redirect_url;
+            } else {
+                window.location.href = url_redirect;
+            }    
+        });
+        
+    });        
+    function removeFilter(name,filter_name)
+    {
+       if(filter_name!=='')
+       {
+           if(filter_name=='application_date')
+           {
+               $("input[name='application_from_date'], input[name='application_to_date']").val('');
+           }    
+           else
+           {   var selected_name = filter_name+'[]';
+               $("select[name='"+selected_name+"'] option:selected" ).each(function() {                                        
+                   if(name==$(this).val())
+                   {   
+                       $(this).removeAttr("selected");                        
+                   } 
+               });
+           }    
+       }
+       $("input[name='search-submit']").trigger("click");  
+    }
+    function saveFilter()
+    {
+       var applicant_filter_name = $("input[name='applicant_filter_name']").val();
+       if(applicant_filter_name!='')
+       {
+           var form_input_data = $("form#applicants").serialize();
+           $.ajax({
+               url: "<?php echo $this->url('applicants',array('action'=>'saveFilterApplicant'))?>",
+               type: 'POST',                    
+               data: form_input_data+'&applicant_filter_name='+applicant_filter_name,                 
+               success: function(response) {
+                   alert(response);
+               },         
+               complete: function(){
+                   window.location = "<?php echo $this->url('applicants',array('action'=>'index'))?>";
+               }
+           });
+       }    
+       else
+       {
+           alert("Please enter the name");
+       }    
+   } 
+   function showCourses(id)
+   {
+       $.ajax({
+           url: "<?php echo $this->url('applicants',array('action'=>'showQualifiedCourses'))?>",
+           type: 'POST',                    
+           data: ({pkey:id}),                 
+           success: function(response) {               
+               $("#show_courses").html(response);
+               $('.dialog-pagination-table').dataTable({
+                    "sPaginationType": "full_numbers",       
+               });                
+               $("#show_courses").dialog({
+                    modal: true,
+                    autoOpen:true,
+                    width: 800,       
+                });
+           }           
+       });
+   }
+   function openNotes(id)
+   {
+      $("#show_notes_"+id).dialog({
+           modal: true,
+           autoOpen:true,
+           width: 400        
+       });
+   }      
+</script>
+
+<h3>Applicants</h3>
+<?php
+if($this->flashMessenger()->render('info')!='') 
+{
+    echo '<div class="alert alert-info">'.$this->flashMessenger()->render('info').'</div>';
+}
+?>
+
+<div id="delete-filter-dialog" title="Delete Filter">
+    <form name="delete_filter_form" id="delete_filter_form" method="POST">
+        <table class="table-form" >            
+            <tr>
+                <td class="title"><?php echo $this->formLabel($form->get('delete_availabe_filter')); ?></td>
+                <td><?php echo $this->formSelect($form->get('delete_availabe_filter')); ?></td>
+            </tr>
+        </table>        
+    </form>
+</div>
+<div id="show_courses" style="display:none;" title="Qualified To Teach"></div>
+<div class="col-md-12">
+    <div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title"><?php echo $this->translate('Filter Applicant') ?></h3>
+    </div>
+    <div class="available_filter">
+        <form id="available_filter_form" name="available_filter_form" action="<?php echo $this->url('applicants',array('action' => 'index'))?>" method="post">
+            <table class="search-form" style="font-size:14px;">
+                <tr>
+                    <td>&nbsp;&nbsp;</td>
+                    <td class="title"><?php echo $this->formLabel($form->get('availabe_filter')); ?></td>
+                    <td><?php echo $this->formSelect($form->get('availabe_filter')); ?></td>
+                    <td><?php echo $this->formRow($form->get('load_filter'));?></td>
+                </tr> 
+            </table>
+            <?php echo $this->formRow($form->get('filter_type'));?>
+        </form>    
+    </div>    
+    <div class="clear_filter">
+        <?php             
+        $filter_html= '';
+        if(isset($clear_filter_array['university'])): 
+            $filter_html .= '<div><b>University:</b> ';        
+            foreach($clear_filter_array['university'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'university\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif;
+        if(isset($clear_filter_array['job'])): 
+            $filter_html .= '<div><b>Job:</b> ';        
+            foreach($clear_filter_array['job'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'job\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif;
+        if(isset($clear_filter_array['instructor_type'])): 
+            $filter_html .= '<div><b>Instructor Type:</b> ';        
+            foreach($clear_filter_array['instructor_type'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'instructor_type\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif;
+        if(isset($clear_filter_array['highest_degree'])): 
+            $filter_html .= '<div><b>Highest Degree:</b> ';        
+            foreach($clear_filter_array['highest_degree'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'highest_degree\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif;
+        if(isset($clear_filter_array['state'])): 
+            $filter_html .= '<div><b>State of Residency:</b> ';        
+            foreach($clear_filter_array['state'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'state\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif;
+        if(isset($clear_filter_array['application_status'])): 
+            $filter_html .= '<div><b>Application Status:</b> ';        
+            foreach($clear_filter_array['application_status'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'application_status\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif;   
+        if(isset($clear_filter_array['course'])): 
+            $filter_html .= '<div><b>Qualified To Teach:</b> ';        
+            foreach($clear_filter_array['course'] as $res) {
+                $filter_html .= $res['title'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\''.$res['id'].'\',\'course\')" /> ';            
+            }
+            $filter_html .= '</div>';
+        endif; 
+        if(!empty($clear_filter_array['application_from_date']) && !empty($clear_filter_array['application_to_date']) ): 
+            $filter_html .= '<div><b>Application Submitted Date:</b> ';               
+            $filter_html .= $clear_filter_array['application_from_date'].' - '.$clear_filter_array['application_to_date'].'<img src="'.$this->basePath().'/img/close_img.png" class="close-btn" onclick="removeFilter(\'date\',\'application_date\')" /> ';            
+            $filter_html .= '</div>';
+        endif;        
+        echo $filter_html;
+        ?>
+    </div>  
+    <div id="saveFilterCnt">        
+        <table>
+            <tr>
+                <td><b>Save Filter</b></td>
+                <td>&nbsp;</td>
+                <td><input type="text" required="required" class="form-control" style="width:180px" name="applicant_filter_name" value="" /></td>
+                <td>&nbsp;</td>
+                <td><a href="#" class="btn btn-small btn-primary" onclick="saveFilter();return false;" >Save</a></td>
+            </tr>
+        </table>           
+    </div>    
+    <?php 
+    $form = $this->form;
+    $form->prepare();
+    $form->setAttribute('action', $this->url('applicants', array('action' => 'index', 'status' => $statusName)));
+    $form->setAttribute('method', 'post');
+    echo $this->form()->openTag($form);
+    ?>    
+    <table class="search-form">
+        <?php
+        $formNames = $form->_formFilters;        
+        $arrCtr = 0;
+        //this will auto arrange the filter format
+        for($tmpCtr = 0;$form->_rowCountView > $tmpCtr; $tmpCtr++){
+            ?>
+            <tr>
+                <td><?php echo $this->formRow($form->get($formNames[$arrCtr])); $arrCtr++;?></td>
+                <td><?php try{echo $this->formRow($form->get($formNames[$arrCtr])); $arrCtr++;}catch (Exception $e){}?></td>
+                <td><?php try{echo $this->formRow($form->get($formNames[$arrCtr])); $arrCtr++;}catch (Exception $e){} ?></td>
+            </tr>
+            <?php
+        }
+        ?>
+        <tr>
+            <td colspan="3" align="right">
+                <table><tr>
+                    <td><?php echo $this->formRow($form->get('search-submit'));?></td>
+                    <td><?php echo $this->formRow($form->get('save_filter'));?></td>
+                    <td><?php echo $this->formRow($form->get('delete_filter'));?></td>
+                    <td><?php echo $this->formRow($form->get('clear_filter'));?></td>
+                </tr></table>
+            </td>
+        </tr>
+    </table>
+    <?php echo $this->formRow($form->get('filter_type'));?>
+    <?php echo $this->form()->closeTag(); ?>
+    </div>    
+    <script type="text/javascript">
+        $(".search-option").multiselect().multiselectfilter();
+    </script>
+</div>
+<div class="col-md-12">    
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <?php echo $this->translate('Results: ') ?><?php echo $this->escapeHtml($rowCount);?>
+            <?php if(count($result)>0): ?>
+            <div class="export-options">						
+                <span>&nbsp;<a id="exportAll" href="<?php echo $this->url('applicants', array('action' => 'exportXLS', 'status' => $statusName))?>">Export data</a></span>                
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php if($rowCount>0 || $search!='') { ?>
+        <div style="text-align:right;display:block;padding:0.8%;font-size:13px;background: #F4F4F4">
+            <span style="display:inline-block;">Search:</span> <input type="text" style="display:inline-block;width: 180px !important;" name="search-term" class="form-control" id="search-term" value="<?php if($search!='') echo $search; else echo '';?>"/>
+        </div>        
+        <?php } ?>
+        <table id="pagination" class="table <?php if($rowCount>0): echo 'custom-datatable'; endif;?>">
+            <thead >                
+                <tr class="panel panel-default">
+                    <th class="panel-heading">University</th>
+                    <th class="panel-heading">First Name</th>
+                    <th class="panel-heading">Last Name</th>
+                    <th class="panel-heading">Email</th>
+                    <th class="panel-heading">Job Title</th>            
+                    <th class="panel-heading">Highest Degree</th>
+                    <th class="panel-heading" id="data-sorter-false">Qualified To Teach</th>
+                    <th class="panel-heading">Applicant Status</th>
+                    <th class="panel-heading" id="data-sorter-false">Notes</th>
+                    <th class="panel-heading">Application Submitted Date</th>
+                    <th class="panel-heading">Applied for Multiple Jobs</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if(count($result)>0) { ?>
+                    <?php foreach ($result as $res): ?>
+                    <tr class="panel panel-default">
+                        <?php
+                        $already_applied = 'No';
+                        if(isset($alreadyApplied[$res->partnersName])) {
+                            if(in_array($res->email, $alreadyApplied[$res->partnersName])){
+                                $already_applied = 'Yes';
+                            }                                    
+                        }    
+                        ?>
+                        <td><?php echo $res->partnersName;?></td>
+                        <td class="table-limit"><a href="<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$res->pkey));?>"><?php echo $res->firstname;?></a></td>
+                        <td class="table-limit"><a href="<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$res->pkey));?>"><?php echo $res->lastname;?></a></td>
+                        <td class="table-limit"><a href="<?php echo $this->url('applicants',array('action'=>'edit','pkey'=>$res->pkey));?>"><?php echo $res->email;?></a></td>
+                        <td><?php echo $res->jobname;?></td>
+                        <td><?php echo $res->highest_degree;?></td>
+                        <td><a href="#" onclick="showCourses('<?php echo $res->pkey?>');return false;"><img alt="courses" src="<?php echo $this->basePath().'/img/coursesimg.png'?>" /></a></td>
+                        <td><?php echo $res->app_status;?></td>
+                        <td>
+                            <a href="#" onclick="openNotes('<?php echo $res->pkey?>');return false;"><img alt="notes" src="<?php echo $this->basePath().'/img/coursesimg.png'?>" /></a>
+                            <div id="show_notes_<?php echo $res->pkey?>" class="show_notes" title="Notes" style="display:none;">
+                                <table class="table">
+                                    <tr class="panel panel-default">
+                                        <th class="panel-heading">Notes</th>
+                                        <th class="panel-heading">Date Time</th>
+                                    </tr>
+                                    <tr class="panel panel-default">
+                                        <td><?php echo $res->notes?></td>
+                                        <td><?php echo date('D M d H:m:s Y',  strtotime($res->AppliedDate))?></td>                                        
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>                
+                        <td><?php if($res->AppliedDate!='') echo date ('m/d/Y h:i A', strtotime($res->AppliedDate)); else echo '-';?> </td>
+                        <td><?php echo $already_applied;?></td>
+                    </tr>    
+                    <?php endforeach;?>
+                <?php } else {?>
+                    <tr class="panel panel-default"><td colspan="10">No records found.</td></tr>
+                <?php } ?>   
+            </tbody>
+        </table>
+        <?php     
+        if($rowCount>0) {
+            $url = $this->url('applicants', array('action' => 'index', 'status' => $statusName)).'?search='.$search;
+            echo $this->paginationControl($this->result,
+                'sliding',
+                'partial/paginator.phtml',            
+                array(
+                    'route' =>  $url
+                )
+            );
+        }
+        ?>
+    </div>    
+</div>
