@@ -94,8 +94,8 @@ class EmailappSendmailForm extends Form
             ),
             'attributes' => array(
                 'type' => 'textarea',                    
-                'class' => 'form-control',  
-                'value' => ''          
+                'class' => 'form-control', 
+                'style' => 'width: 470px;'                         
             ),
         )); 
         

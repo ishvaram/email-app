@@ -11,9 +11,25 @@
                 $("input:checkbox[name=selectedmail]:checked").each(function()
                 {
                      messageCheckboxes.push($(this).val());
-                });                
+                });
+                document.getElementById('maillist').value = messageCheckboxes;                             //alert(messageCheckboxes);
+        });
+        $('#sendid').click(function() {
+            
+
+        if ($('#maillist').val() == '') 
+            {
+                alert('Please select atleast one email address');
+                return false;
+
+            }
+            else
+            {
+                $('#sendform').submit();
+            }
         });
  });
+
  </script>
 <div class="row">
     <div class="col-md-12">
@@ -34,10 +50,16 @@ if($this->flashMessenger()->render('info')!='')
 ?>
         <div class="panel panel-default">
             <div class="panel-heading">
+                
+                <form name ="sendform" id="sendform" action="<?php echo $this->url('emailapp', array('action'=>'sendmail'));?>" method="POST">
                 <?php echo $this->translate('Results: ') ?><?php echo $this->escapeHtml(count($emailapp));?>
-                <span style="float:right;font-size:12px;">
-                    <a href="<?php echo $this->url('emailapp', array('action'=>'import'));?>">Import</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <a href="<?php echo $this->url('emailapp', array('action'=>'sendmail'));?>">Send Mail</a>
+                <span style="font-size:12px;margin-left: 80%;">
+                <a href="<?php echo $this->url('emailapp', array('action'=>'import'));?>">Import</a> 
+                &nbsp;&nbsp; | &nbsp;&nbsp;
+                 </span>
+                    <a style="font-size: 13px;" id="sendid" href="#">Send Mail</a>
+                    <input type="hidden" name="maillist" id="maillist"/> 
+                </form>
                     <!--
                     &nbsp;&nbsp;
                     <a href="<?php echo $this->url('emailapp', array('action'=>'add'));?>">Add New</a></span> -->                      
@@ -62,12 +84,7 @@ if($this->flashMessenger()->render('info')!='')
                  <?php
                  if(count($emailapp)>0) { foreach ($emailapp as $emailapps) : ?>
                     <tr class="panel panel-default">
-                        <form>
-                            <td>
-                                <input type="checkbox" class="messageCheckbox" name="selectedmail" value="<?php echo $emailapps->email;?>">
-                                <input type="hidden" value></input>
-                            </td>
-                        </form>
+                        <td><input type="checkbox" class="messageCheckbox" name="selectedmail" value="<?php echo $emailapps->email;?>"> </td>
                         <td><?php echo $emailapps->org_admin;?></td> 
                         <td><?php echo $emailapps->firstname.' '.$emailapps->lastname;?></td>
                         <td><?php echo $emailapps->email;?></td> 

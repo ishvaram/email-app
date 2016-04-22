@@ -197,13 +197,13 @@ class EmailappController extends AbstractActionController
             $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
             $updateDate = $this->getEmailappTable()->UpdateEmailapp($res['id']);
         }
-       $this->flashMessenger()->addSuccessMessage('<i class="fa fa-maxcdn" aria-hidden="true"></i> Mail Sent successfully');
+       $this->flashMessenger()->addSuccessMessage('Mail Sent successfully');
        return $this->redirect()->toRoute('emailapp');
     }
 
     
     //Send Mail Form
-    public function sendmailAction() {
+    public function sendmailAction() {           
         $dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
         $form = new EmailappSendmailForm($dbAdapter);
         $request = $this->getRequest(); 
