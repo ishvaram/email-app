@@ -188,15 +188,34 @@ class EmailappController extends AbstractActionController
     public function sendmailwithtemplateAction() {
        //$sendStatus = $this->getEmailappTable()->SendEmailapp();
        $Emaillist = $this->getEmailappTable()->searchBy($_REQUEST);        
-       foreach ($Emaillist as $res)
-        {             
+       //foreach ($Emaillist as $res)
+
+
+        $maildata = $_POST['maillist'];           
+        $maillist = explode(',', $maildata); 
+        foreach ($maillist as $mail) {
+            $maildatum = $this->getEmailappTable()->getMailContent($mail);
+            $to_name = $maildatum['name'];
+            $to_email = $maildatum['email'];
+            $email_template = $_POST['body'];
+            $email_template = str_replace('{user}', $maildatum['name'], $email_template);
+            $email_template = str_replace('{table_content}', $maildatum['content'], $email_template);
+            $triggerMail = new EmailAlert(array());
+            $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
+            foreach ($Emaillist as $res)
+            {            
+                 $updateDate = $this->getEmailappTable()->UpdateEmailapp($res['id']);                         
+            }
+        }
+
+        /*{             
             $to_name = $res['firstname'];
             $to_email = $res['email'];
             $email_template = $_POST['body'];
             $triggerMail = new EmailAlert(array());
             $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
             $updateDate = $this->getEmailappTable()->UpdateEmailapp($res['id']);
-        }
+        }*/
        $this->flashMessenger()->addSuccessMessage('Mail Sent successfully');
        return $this->redirect()->toRoute('emailapp');
     }

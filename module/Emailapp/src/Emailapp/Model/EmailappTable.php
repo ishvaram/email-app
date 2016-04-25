@@ -132,4 +132,15 @@ class EmailappTable
         $result = $statement->execute();
     }
 
+    public function getMailContent($email) {
+        
+        $adapter = $this->tableGateway->getAdapter();        
+        $sql = "SELECT * from mail_content where email='".$email."'"; 
+        $statement = $adapter->query($sql);
+        $result = $statement->execute();
+        $resultSet = new ResultSet();
+        $resultSet->initialize($result);        
+        $row = $resultSet->current();
+        return $row;
+    }
 }
