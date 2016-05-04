@@ -4,7 +4,7 @@ namespace Emailapp\Form;
 use Zend\Form\Form;
 use Zend\Db\Adapter\AdapterInterface;
 
-class EmailappUploadForm extends Form
+class EmailappUploadTempForm extends Form
 {
     public function __construct(AdapterInterface $dbAdapter)
     {

@@ -194,8 +194,9 @@ class EmailAlert extends AbstractPlugin
         $mail->Subject = $subject;            
         $mail->MsgHTML($body_content);          
         if(!$mail->send()) {
-            echo $mail->ErrorInfo;
+            //echo $mail->ErrorInfo;
             return false;
+           
         } else {
             return true;
         }

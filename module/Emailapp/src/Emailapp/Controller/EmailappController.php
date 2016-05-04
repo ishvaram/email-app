@@ -21,6 +21,7 @@ use Emailapp\Model\Emailapp;
 use Emailapp\Form\EmailappForm;  
 use Emailapp\Form\EmailappEditForm;  
 use Emailapp\Form\EmailappUploadForm;
+use Emailapp\Form\EmailappUploadTempForm;
 use Emailapp\Form\EmailappSendmailForm;
 
 use Applicants\Controller\Plugin\EmailAlert;
@@ -97,7 +98,7 @@ class EmailappController extends AbstractActionController
                 'action' => 'add'
             ));
         }
-        $Emailapp = $this->getEmailappTable()->getEmailapp($id);		
+        $Emailapp = $this->getEmailappTable()->getEmailapp($id);	
         $dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
         $form = new EmailappEditForm($dbAdapter);
         $form->bind($Emailapp);
@@ -105,9 +106,10 @@ class EmailappController extends AbstractActionController
         if ($request->isPost()) {
             $form->setData($request->getPost());
            if ($form->isValid()) {
-                $this->getEmailappTable()->saveEmailapp($form->getData());
+                $Emailapp->exchangeArray($request->getPost());  
+                $this->getEmailappTable()->saveEmailappEdit($Emailapp);
                 // Redirect to list of Emailapp
-                $this->flashMessenger()->addSuccessMessage('Emailapp updated successfully');
+                $this->flashMessenger()->addSuccessMessage('Email List updated successfully');
                 return $this->redirect()->toRoute('emailapp');
             }
         }
@@ -165,32 +167,17 @@ class EmailappController extends AbstractActionController
         );
     }
     
-    // Send Mail to all Users
-
-    public function sendmailOldAction() {
-       //$sendStatus = $this->getEmailappTable()->SendEmailapp();
-       $Emaillist = $this->getEmailappTable()->searchBy($_REQUEST);        
-       foreach ($Emaillist as $res)
-        {            
-            $to_name = $res['firstname'];
-            $to_email = $res['email'];
-            $email_template = $_POST['body'];
-            $triggerMail = new EmailAlert(array());
-            $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
-            $updateDate = $this->getEmailappTable()->UpdateEmailapp($res['id']);
-        }
-       $this->flashMessenger()->addSuccessMessage('Mail Sent successfully');
-       return $this->redirect()->toRoute('emailapp');
+    //Send Mail Form
+    public function sendmailAction() {
+        $dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
+        $form = new EmailappSendmailForm($dbAdapter);
+        $request = $this->getRequest();
+        return array('form' => $form);
     }
-
-
-// send email with tempalte 
+    
+    // send email with tempalte 
     public function sendmailwithtemplateAction() {
-       //$sendStatus = $this->getEmailappTable()->SendEmailapp();
-       $Emaillist = $this->getEmailappTable()->searchBy($_REQUEST);        
-       //foreach ($Emaillist as $res)
-
-
+        $Emaillist = $this->getEmailappTable()->searchBy($_REQUEST);        
         $maildata = $_POST['maillist'];           
         $maillist = explode(',', $maildata); 
         foreach ($maillist as $mail) {
@@ -202,60 +189,22 @@ class EmailappController extends AbstractActionController
             $email_template = str_replace('{table_content}', $maildatum['content'], $email_template);
             $triggerMail = new EmailAlert(array());
             $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
-            foreach ($Emaillist as $res)
-            {            
-                 $updateDate = $this->getEmailappTable()->UpdateEmailapp($res['id']);                         
-            }
+            $updateDate = $this->getEmailappTable()->UpdateEmailapp($maildatum['id']);                         
+            
         }
-
-        /*{             
-            $to_name = $res['firstname'];
-            $to_email = $res['email'];
-            $email_template = $_POST['body'];
-            $triggerMail = new EmailAlert(array());
-            $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
-            $updateDate = $this->getEmailappTable()->UpdateEmailapp($res['id']);
-        }*/
-       $this->flashMessenger()->addSuccessMessage('Mail Sent successfully');
-       return $this->redirect()->toRoute('emailapp');
-    }
-
-    
-    //Send Mail Form
-    public function sendmailAction() {           
-        $dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
-        $form = new EmailappSendmailForm($dbAdapter);
-        $request = $this->getRequest(); 
-        return array('form' => $form);
-        
-
+        $this->flashMessenger()->addSuccessMessage('Mail Sent successfully');
+        return $this->redirect()->toRoute('emailapp');
     }
     
-   public function tempdetailsAction() {
-
+    public function tempdetailsAction() {
         $response = $this->getResponse();
         $request = $this->getRequest();
         $data = $request->getPost();        
         $tempid = $data['tempid'];
         $temolateSubject = $this->getEmailappTable()->gettemplateDetails($tempid);         
         $response->setContent(json_encode($temolateSubject));        
-        return $response;        
-
+        return $response;  
     }
-
-
-    // selectedemail for sendmail
-    /*public function selectedemailAction() {
-
-        $response = $this->getResponse();
-        $request = $this->getRequest();
-        $data = $request->getPost();        
-        $tempid = $data['tempid'];
-        $temolateSubject = $this->getEmailappTable()->gettemplateDetails($tempid);         
-        $response->setContent(json_encode($temolateSubject));        
-        return $response;        
-
-    }*/
     
     //Import Action
     public function importAction()
@@ -288,9 +237,6 @@ class EmailappController extends AbstractActionController
                     if (($handle = fopen($fileLocation, "r")) !== FALSE) {
                         while (($data = fgetcsv($handle, '', ",")) !== FALSE) {
                             $num = count($data);
-                            echo $num;
-                            echo '<pre>'; print_r($data); echo '</pre>'; 
-                            
                             $row++;                            
                             if($row != 1)
                             {
@@ -339,13 +285,87 @@ class EmailappController extends AbstractActionController
                 }
                
             }
-            //exit;
+            //Insert Into Converted Email table
+            $Template = $this->getEmailappTable()->saveEmailapp();
             //Redirect to list of Emailapp 
             $this->flashMessenger()->addSuccessMessage('Email list imported successfully');
             return $this->redirect()->toRoute('emailapp');
         }
         return array('form' => $form);
    }
+   
+   //ImportTemp and send mail
+    public function importtempAction()
+    {
+        $dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
+        $form = new EmailappUploadTempForm($dbAdapter);
+        $request = $this->getRequest();
+        if ($request->isPost()) {
+            $Emailapp = new Emailapp();
+            $form->setData($request->getPost());
+            if ($form->isValid())
+            {
+                $Emailapp->exchangeArray($form->getData());
+                $nonFile = $request->getPost()->toArray();
+                $File    = $this->params()->fromFiles('fileupload');
+                $data = array_merge(
+                $nonFile,
+                array('fileupload'=> $File['name'])
+                );
+               
+                $adapter = new \Zend\File\Transfer\Adapter\Http(); 
+                $adapter->setDestination($_SERVER['DOCUMENT_ROOT'].'/files');
+                $fileLocation = $_SERVER['DOCUMENT_ROOT'].'/files/'.$File['name'];
+                //echo $fileLocation;
+                
+                if ($adapter->receive($File['name'])) {
+                    $total_error_cnt = 0;                    
+                    $error_array = array();
+                    $row = 0;
+                    if (($handle = fopen($fileLocation, "r")) !== FALSE) {
+                        while (($data = fgetcsv($handle, '', ",")) !== FALSE) {
+                            $num = count($data);
+                            $row++;                            
+                            if($row != 1)
+                            {
+                                for ($c=1; $c < $num; $c++) {
+                                    $EmailappStart = array(
+                                    'id' => '',
+                                    'name' => $data[0],
+                                    'email' => $data[1],
+                                    'content' => $data[2],
+                                    'import_date' => date('Y-m-d H:i:s'), 
+                                    );
+                                    
+                                }
+                                $Emailapp = array(
+                                    'id' => '',
+                                    'name' => $data[0],
+                                    'email' => $data[1],
+                                    'content' => $data[2],
+                                    'import_date' => date('Y-m-d H:i:s'), 
+                                    'mail_sent' => date('Y-m-d H:i:s'),
+                                    );  
+                                $id = $this->getEmailappTable()->saveEmailappImportTemp($Emailapp);
+                                $triggerMail = new EmailAlert(array());
+                                $mail_send = $triggerMail->sendBulkEmail($Emailapp['email'],$Emailapp['name'],$Emailapp['content']);
+                            }
+                              
+                            
+                        }
+                        fclose($handle);
+                    }
+                }
+               
+            }
+            //Redirect to list of Emailapp 
+            $this->flashMessenger()->addSuccessMessage('Email list imported and mail sent successfully');
+            return $this->redirect()->toRoute('emailapp');
+        }
+        return array('form' => $form);
+   }
+   
+   
    
    
 }

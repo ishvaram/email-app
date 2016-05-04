@@ -13,15 +13,15 @@ class EmailappEditForm extends Form
         parent::__construct('Emailapp');		
         $this->setAttribute('method', 'post');		
         $this->add(array(
-            'name' => 'curic_id',
+            'name' => 'id',
             'attributes' => array(
                 'type'  => 'hidden',
             ),
         ));	
         $this->add(array(
-            'name' => 'curic_code',
+            'name' => 'name',
             'options' => array(
-                'label' => 'Code *',
+                'label' => 'Name *',
             ),
             'attributes' => array(
                 'type' => 'text',
@@ -30,9 +30,9 @@ class EmailappEditForm extends Form
             ),
         ));
         $this->add(array(
-            'name' => 'curic_title',
+            'name' => 'email',
             'options' => array(
-                'label' => 'Title *',
+                'label' => 'Email *',
             ),
             'attributes' => array(
                 'type' => 'text',
@@ -41,76 +41,15 @@ class EmailappEditForm extends Form
             ),
         ));
         $this->add(array(
-            'name' => 'curic_desc',
+            'name' => 'content',
             'options' => array(
-                'label' => 'Description ',
+                'label' => 'Content *',
             ),
             'attributes' => array(
-                'type' => 'text',
-                'required' => false,
+                'type' => 'textarea',
+                'rows' => 6,        
                 'class' => 'form-control',
-            ),
-        ));
-        $this->add(array(
-            'name' => 'curic_version',
-            'options' => array(
-                'label' => 'Version *',
-            ),
-            'attributes' => array(
-                'type' => 'text',
-                'required' => true,
-                'class' => 'form-control',
-                'onKeyPress' =>'return isNumberKeyConfig(event)',
-                'maxlength'=>'3'
-            ),
-        ));
-        $this->add(array(
-            'name' => 'curic_url',
-            'options' => array(
-                'label' => 'URL ',
-            ),
-            'attributes' => array(
-                'type' => 'text',
-                'required' => false,
-                'class' => 'form-control',
-            ),
-        ));
-        $this->add(array(
-            'name' => 'curic_date',
-            'options' => array(
-                'label' => 'Date ',
-            ),
-            'attributes' => array(
-                'type' => 'text',
-                'required' => false,
-                'class' => 'form-control',
-                'placeholder' => 'yyyy-mm-dd',
-            ),
-        ));
-        $this->add(array(
-            'type' => 'Zend\Form\Element\Select',       
-            'name' => 'curic_type',
-            'id' => 'curic_type',
-            'attributes' => array(
-                    'required' => false,
-                    'class' => 'form-control',
-                    'options' => $this->getTypeList(),     
-            ),
-            'options' => array(
-                'label' => 'Emailapp Type *',
-            ),
-        ));
-        $this->add(array(
-            'type' => 'Zend\Form\Element\Select',       
-            'name' => 'curic_class',
-            'id' => 'curic_class',
-            'attributes' => array(
-                    'required' => false,
-                    'class' => 'form-control',
-                    'options' => $this->getClassList(),     
-            ),
-            'options' => array(
-                'label' => 'Emailapp Class *',
+                'id' => 'textarea-editor',
             ),
         ));
         $this->add(array(
