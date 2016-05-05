@@ -168,29 +168,33 @@ class EmailappController extends AbstractActionController
     }
     
     //Send Mail Form
-    public function sendmailAction() {
+    public function sendmailAction() {  
+        $id = $_POST['maillist'];
+        //print_r($id);     
         $dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
         $form = new EmailappSendmailForm($dbAdapter);
         $request = $this->getRequest();
-        return array('form' => $form);
+        $mails = $this->getEmailappTable()->getMailsById($id);       
+        return array('form' => $form,
+            'mails' => $mails
+            );
     }
     
     // send email with tempalte 
     public function sendmailwithtemplateAction() {
         $Emaillist = $this->getEmailappTable()->searchBy($_REQUEST);        
-        $maildata = $_POST['maillist'];           
-        $maillist = explode(',', $maildata); 
-        foreach ($maillist as $mail) {
-            $maildatum = $this->getEmailappTable()->getMailContent($mail);
-            $to_name = $maildatum['name'];
-            $to_email = $maildatum['email'];
+        $iddata = $_POST['maillist'];             
+        $idlist = explode(',', $iddata); 
+        foreach ($idlist as $id) {
+            $iddatum = $this->getEmailappTable()->getMailContent($id);            
+            $to_name = $iddatum['name'];
+            $to_email = $iddatum['email'];
             $email_template = $_POST['body'];
-            $email_template = str_replace('{user}', $maildatum['name'], $email_template);
-            $email_template = str_replace('{table_content}', $maildatum['content'], $email_template);
+            $email_template = str_replace('{user}', $iddatum['name'], $email_template);
+            $email_template = str_replace('{table_content}', $iddatum['content'], $email_template);
             $triggerMail = new EmailAlert(array());
             $mail_send = $triggerMail->sendBulkEmail($to_email,$to_name,$email_template);
-            $updateDate = $this->getEmailappTable()->UpdateEmailapp($maildatum['id']);                         
-            
+            $updateDate = $this->getEmailappTable()->UpdateEmailapp($iddatum['id']);                                    
         }
         $this->flashMessenger()->addSuccessMessage('Mail Sent successfully');
         return $this->redirect()->toRoute('emailapp');

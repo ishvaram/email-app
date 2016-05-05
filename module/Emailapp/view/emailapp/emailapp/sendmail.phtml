@@ -82,11 +82,10 @@ echo $this->form()->openTag($form);
 ?>
 
 <table class="table-form">
-
-
     <tr class='title'>                 
         <td class='title'><?php echo $this->formLabel($form->get('mailto')); ?></td>
-        <td><?php echo "<textarea readonly type='textarea' style='width:470px;' class='form-control' name='maillist' >".$_POST['maillist']."</textarea>"?></td>
+        <td><?php echo "<textarea readonly type='textarea' style='width:470px;' class='form-control' >".$mails."</textarea>"?></td>
+        <td><?php echo "<input type='hidden'  name='maillist' value='".$_POST['maillist']."'/>"?></td>
     </tr>
     <tr>                 
         <td class="title"><?php echo $this->formLabel($form->get('template_name')); ?></td>

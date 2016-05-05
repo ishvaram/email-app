@@ -78,7 +78,7 @@ if($this->flashMessenger()->render('info')!='')
                  <?php
                  if(count($emailapp)>0) { foreach ($emailapp as $emailapps) : ?>
                     <tr class="panel panel-default">
-                        <td><input type="checkbox" class="messageCheckbox" name="selectedmail" value="<?php echo $emailapps->email;?>"> </td>
+                        <td><input type="checkbox" class="messageCheckbox" name="selectedmail" value="<?php echo $emailapps->id ;?>"> </td>
                         <td><?php echo $emailapps->name;?></td> 
                         <td><?php echo $emailapps->email;?></td> 
                         <td><?php 

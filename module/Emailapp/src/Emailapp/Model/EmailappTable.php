@@ -201,15 +201,30 @@ class EmailappTable
         $result = $statement->execute();
     }
     
-    public function getMailContent($email) {
+    public function getMailContent($id) {
         $adapter = $this->tableGateway->getAdapter();        
-        $sql = "SELECT * from email_content where email='".$email."'"; 
+        $sql = "SELECT * from email_content where id = '".$id."'"; 
         $statement = $adapter->query($sql);
         $result = $statement->execute();
         $resultSet = new ResultSet();
         $resultSet->initialize($result);        
-        $row = $resultSet->current();
+        $row = $resultSet->current();        
         return $row;
     }
 
+
+    public function getMailsById($id) {
+        $adapter = $this->tableGateway->getAdapter();        
+        $sql = "SELECT email from email_content where id in (".$id.")"; 
+        $statement = $adapter->query($sql);
+        $result = $statement->execute();
+        $resultSet = new ResultSet();
+        $resultSet->initialize($result); 
+        $maildatum = '';      
+        foreach ($resultSet as $row) 
+        {
+            $maildatum .=  $row->email.',&nbsp;';
+        }        
+        return $maildatum;
+    }
 }
