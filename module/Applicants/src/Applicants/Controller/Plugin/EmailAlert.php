@@ -40,13 +40,13 @@ class EmailAlert extends AbstractPlugin
         $mail->isSMTP();                                      // Set mailer to use SMTP
         $mail->Host = 'smtp.gmail.com';  // Specify main and backup SMTP servers
         $mail->SMTPAuth = true;                               // Enable SMTP authentication
-        $mail->Username = 'leadgen.alerts@hotchalk.com';                 // SMTP username
-        $mail->Password = 'Hotchalk!23';                           // SMTP password
+        $mail->Username = '';                 // SMTP username
+        $mail->Password = '';                           // SMTP password
         $mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
         $mail->Port = 587;                                    // TCP port to connect to
 
-        $mail->From = 'leadgen.alerts@hotchalk.com';
-        $mail->FromName = 'HOTCHALK';
+        $mail->From = '';
+        $mail->FromName = '';
         $mail->addAddress('saranya@svapas.com', 'Saranya');     // Add a recipient
         
 
@@ -183,8 +183,8 @@ class EmailAlert extends AbstractPlugin
         $mail->isSMTP();                                      // Set mailer to use SMTP
         $mail->Host = 'smtp.gmail.com';                       // Specify main and backup SMTP servers
         $mail->SMTPAuth = true;                               // Enable SMTP authentication
-        $mail->Username = 'leadgen.alerts@hotchalk.com';         // SMTP username
-        $mail->Password = 'Hotchalk!23';                      // SMTP password
+        $mail->Username = '';         // SMTP username
+        $mail->Password = '';                      // SMTP password
         $mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
         $mail->Port = 587;                                    // TCP port to connect to
         $mail->From = 'noreply@veeva.com';
