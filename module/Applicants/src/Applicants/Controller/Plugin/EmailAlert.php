@@ -40,13 +40,13 @@ class EmailAlert extends AbstractPlugin
         $mail->isSMTP();                                      // Set mailer to use SMTP
         $mail->Host = 'smtp.gmail.com';  // Specify main and backup SMTP servers
         $mail->SMTPAuth = true;                               // Enable SMTP authentication
-        $mail->Username = '';                 // SMTP username
-        $mail->Password = '';                           // SMTP password
+        $mail->Username = 'leadgen.alerts@hotchalk.com';                 // SMTP username
+        $mail->Password = 'Hotchalk!23';                           // SMTP password
         $mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
         $mail->Port = 587;                                    // TCP port to connect to
 
-        $mail->From = '';
-        $mail->FromName = '';
+        $mail->From = 'leadgen.alerts@hotchalk.com';
+        $mail->FromName = 'HOTCHALK';
         $mail->addAddress('saranya@svapas.com', 'Saranya');     // Add a recipient
         
 
@@ -176,6 +176,7 @@ class EmailAlert extends AbstractPlugin
     
     public function sendBulkEmail($to_email,$to_name,$email_template) {
         $to_email = $to_email;
+       // $from = 'jehovaram@gmail.com';
         $subject = 'Maintanence Schedule';        
         $body_content = $email_template;
         $mail = new PHPMailer;
@@ -183,19 +184,20 @@ class EmailAlert extends AbstractPlugin
         $mail->isSMTP();                                      // Set mailer to use SMTP
         $mail->Host = 'smtp.gmail.com';                       // Specify main and backup SMTP servers
         $mail->SMTPAuth = true;                               // Enable SMTP authentication
-        $mail->Username = '';         // SMTP username
-        $mail->Password = '';                      // SMTP password
+        $mail->Username = 'leadgen.alerts@hotchalk.com';         // SMTP username
+        $mail->Password = 'Hotchalk!23';                      // SMTP password
         $mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
         $mail->Port = 587;                                    // TCP port to connect to
         $mail->From = 'noreply@veeva.com';
         $mail->FromName = 'Veeva Email App';
         $mail->addAddress($to_email, $to_name);               // Add a recipient
+        $mail->addCustomHeader('Disposition-Notification-To: $to_email\r\n');
         $mail->isHTML(true);                                  // Set email format to HTML            
         $mail->Subject = $subject;            
         $mail->MsgHTML($body_content);          
         if(!$mail->send()) {
-            //echo $mail->ErrorInfo;
-            return false;
+            echo 'Message could not be sent.';
+            echo 'Mailer Error: ' . $mail->ErrorInfo;    
            
         } else {
             return true;

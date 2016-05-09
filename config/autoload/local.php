@@ -15,11 +15,11 @@ return array(
     
     'db' => array(
          'username' => 'root',
-         'password' => '',
+         'password' => 'dsi123',
         'adapters' => array(
             'db1' => array(
                 'username' => 'root',
-                'password' => '',
+                'password' => 'dsi123',
             ),
             'db2' => array(
                 'username' => 'root',

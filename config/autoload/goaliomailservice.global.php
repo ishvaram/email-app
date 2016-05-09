@@ -21,8 +21,8 @@ $settings = array(
         'connection_class' => 'login',
         'connection_config' => array(
             'ssl' => 'tls',
-            'username' => '',
-            'password' => ''
+            'username' => 'leadgen.alerts@hotchalk.com',
+            'password' => 'Hotchalk!23'
         ),
         'port' => 587
     )
